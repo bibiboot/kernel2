@@ -435,7 +435,21 @@ static int
 special_file_read(vnode_t *file, off_t offset, void *buf, size_t count)
 {
         NOT_YET_IMPLEMENTED("VFS: special_file_read");
-        return 0;
+        KASSERT(file);
+        dbg(DBG_INIT,"(GRADING2 1.a)  File is not null\n");
+
+        KASSERT((S_ISCHR(file->vn_mode) || S_ISBLK(file->vn_mode))) 
+        dbg(DBG_INIT,"(GRADING2 1.a)  Filemodde\n");
+
+        if (S_ISCHR(file->vn_mode)){
+            KASSERT(file->vn_cdev && file->vn_cdev->cd_ops && file->vn_cdev->cd_ops->read)
+            dbg(DBG_INIT,"(GRADING2 1.a)  Byte_pointers are not null and the function pointers do exist\n");
+        }
+        if (S_ISBLK(file->vn_mode)){
+            /* In case the file is block file */
+            return -ENOTSUP;
+        }
+        return file->vn_cdev->cd_ops->read( file->vn_cdev, offset, buf, count);
 }
 
 /*
@@ -448,7 +462,21 @@ static int
 special_file_write(vnode_t *file, off_t offset, const void *buf, size_t count)
 {
         NOT_YET_IMPLEMENTED("VFS: special_file_write");
-        return 0;
+        KASSERT(file);
+        dbg(DBG_INIT,"(GRADING2 1.a)  File is not null\n");
+
+        KASSERT((S_ISCHR(file->vn_mode) || S_ISBLK(file->vn_mode)))
+        dbg(DBG_INIT,"(GRADING2 1.a)  Filemodde\n");
+
+        if (S_ISCHR(file->vn_mode)){
+            KASSERT(file->vn_cdev && file->vn_cdev->cd_ops && file->vn_cdev->cd_ops->write)
+            dbg(DBG_INIT,"(GRADING2 1.a)  Byte_pointers are not null and the function pointers do exist\n");
+        }
+        if (S_ISBLK(file->vn_mode)){
+            /* In case the file is block file */
+            return -ENOTSUP;
+        }
+        return file->vn_cdev->cd_ops->write( file->vn_cdev, offset, buf, count);
 }
 
 /* Memory map the special file represented by <file>. All of the
