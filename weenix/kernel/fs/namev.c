@@ -34,6 +34,20 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         KASSERT(NULL != result);
         dbg(DBG_INIT,"(GRADING2 2.a)  result pointer is not null\n");
 
+ Error cases you must handle for this function at the VFS level:
+ *      o EINVAL
+ *        mode requested creation of something other than a device special
+ *        file.
+ *      o EEXIST
+ *        path already exists.
+ *      o ENOENT
+ *        A directory component in path does not exist.
+ *      o ENOTDIR
+ *        A component used as a directory in path is not, in fact, a directory.
+ *      o ENAMETOOLONG
+ *        A component of path was too long.
+
+
         /* Check for error condition */
         if (len == 0){
             return ERRORCODE;
@@ -74,7 +88,59 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
           vnode_t *base, vnode_t **res_vnode)
 {
         NOT_YET_IMPLEMENTED("VFS: dir_namev");
-        return 0;
+
+        KASSERT(NULL != pathname);
+        dbg(DBG_INIT,"(GRADING2 2.b)  pathname is not null\n");
+        KASSERT(NULL != namelen);
+        dbg(DBG_INIT,"(GRADING2 2.b)  namelen is not null\n");
+        KASSERT(NULL != name);
+        dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
+        KASSERT(NULL != res_vnode);
+        dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
+        KASSERT(NULL != /* pointer to corresponding vnode */);
+
+        vnode_t *dest;
+        if(pathname[0] == '/'){
+            /*Check if absolute path is provided or not*/
+            /*Ignore base if provided*/
+            /*Remove filename*/
+            /*Find the vnode of the directory given*/
+            dir = pathname;   
+            char *index = strchr(base,'/');
+            strcpy(name, index+1);
+            strncpy(dir, pathname, strlen(base)-strlen(index));
+            strcat(base, dir);
+
+            base = vfs_root_vn;
+        }
+        else if ( base == NULL ){
+            /* Base is NULL means use process's current working directory vnode*/
+            dest = curproc->p_cwd;
+        }
+        else {
+            /* Case where base directory is given and file path from base is given */
+            /* Find the parent directory*/
+            /* filename */
+            char *index = strchr(base,'/');
+            if (name==NULL) {
+                /* As the path do not contain any slashes */
+                name = base;
+            }
+            else {
+                strcpy(name, index+1);
+                /*Appending the directorie in path name as well as base.*/
+                strncpy(dir, pathname, strlen(base)-strlen(index));
+                strcat(base, dir);
+            }
+
+        }
+
+        /* length of last charcater */
+        *namelen = strlen(name); 
+        /* Apointer to the vnode corresponding to path given*/
+        int status = lookup(dest, *name,  namelen, res_vnode)
+        return status;
+
 }
 
 /* This returns in res_vnode the vnode requested by the other parameters.
