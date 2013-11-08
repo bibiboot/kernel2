@@ -41,7 +41,30 @@
 int
 do_read(int fd, void *buf, size_t nbytes)
 {
-       #shakti is doing this dont touch pwease
+       
+       file_t fle;
+
+       fle=fget(fd);
+      if(fle==NULL)
+      {
+          DBG(DBG_INIT,"file not found");
+      }
+
+      if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR)
+      {
+          dbg(DBG_INIT,"file is a directory");
+          return EISDIR;
+      }
+  if(fle->fmode!=FMODE_READ)
+      {
+
+          dbg(DBG_INIT,"file is not in read mode");
+          return EBADF;
+      }
+      fle->f_vnode->vn->ops->(read(fle->fnode,fle->fpos,buf,nbytes));
+      fle->fpos=fle->fpos+buf;
+      fput(fle);
+      return nbytes;
 }
 
 /* Very similar to do_read.  Check f_mode to be sure the file is writable.  If
@@ -55,7 +78,35 @@ do_read(int fd, void *buf, size_t nbytes)
 int
 do_write(int fd, const void *buf, size_t nbytes)
 {
-         #shakti is doing this dont touch pwease
+         file_t fle;
+
+       fle=fget(fd);
+        if(fle==NULL)
+      {
+          DBG(DBG_INIT,"file not found");
+      }
+
+      if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR)
+      {
+          dbg(DBG_INIT,"file is a directory");
+          return EISDIR;
+      }
+  if(fle->fmode!=FMODE_WRITE)
+      {
+
+          dbg(DBG_INIT,"file is not in read mode");
+          return EBADF;
+      }
+      if(fle->fmode==FMODE_APPEND)
+      {
+
+         do_lseek();//call lseek here..wil complete it after finishing lseek
+      }
+
+fle->f_vnode->vn_ops->(write(fle->fnode,fle->f_pos,buf,nbytes));
+      fle->fpos=fle->fpos+buf;
+      fput(fle);
+      return nbytes;
 }
 
 /*
