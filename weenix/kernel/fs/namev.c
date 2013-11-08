@@ -26,7 +26,25 @@ int
 lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         NOT_YET_IMPLEMENTED("VFS: lookup");
-        return 0;
+
+        KASSERT(NULL != dir);
+        dbg(DBG_INIT,"(GRADING2 2.a)  Dir is not null\n");
+        KASSERT(NULL != name);
+        dbg(DBG_INIT,"(GRADING2 2.a)  name is not null\n");
+        KASSERT(NULL != result);
+        dbg(DBG_INIT,"(GRADING2 2.a)  result pointer is not null\n");
+
+        /* Check for error condition */
+        if (*name == "."){
+            /* Current process. Current directory */
+            dir = curproc->p_cwd;
+        }
+        else if ( *name == ".."){
+
+
+
+        }
+        return dir->vn_ops->lookup(dir, name, name_len, result);
 }
 
 
