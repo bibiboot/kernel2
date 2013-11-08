@@ -35,6 +35,9 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         dbg(DBG_INIT,"(GRADING2 2.a)  result pointer is not null\n");
 
         /* Check for error condition */
+        if (len == 0){
+            return ERRORCODE;
+        }
         if (*name == "."){
             /* Current process. Current directory */
             dir = curproc->p_cwd;
