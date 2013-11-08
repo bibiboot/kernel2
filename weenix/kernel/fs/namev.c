@@ -34,33 +34,21 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         KASSERT(NULL != result);
         dbg(DBG_INIT,"(GRADING2 2.a)  result pointer is not null\n");
 
- Error cases you must handle for this function at the VFS level:
- *      o EINVAL
- *        mode requested creation of something other than a device special
- *        file.
- *      o EEXIST
- *        path already exists.
- *      o ENOENT
- *        A directory component in path does not exist.
- *      o ENOTDIR
- *        A component used as a directory in path is not, in fact, a directory.
- *      o ENAMETOOLONG
- *        A component of path was too long.
-
-
-        /* Check for error condition */
-        if (len == 0){
-            return ERRORCODE;
+        /*Check input*/
+        if(len > NAME_LEN){
+            return ENAMETOOLONG;
         }
-        if (*name == "."){
-            /* Current process. Current directory */
-            dir = curproc->p_cwd;
+
+        /* Dir has no lookup */
+        if(!dir->vn_ops->lookup)
+        {
+            return ENOTDIR;
         }
-        else if ( *name == ".."){
 
+        /*TODO: How to detect . and .. case */
 
+        /*returns with the vnode refcount on *result incremented*/
 
-        }
         return dir->vn_ops->lookup(dir, name, name_len, result);
 }
 
@@ -100,43 +88,30 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
         KASSERT(NULL != /* pointer to corresponding vnode */);
 
         vnode_t *dest;
-        if(pathname[0] == '/'){
-            /*Check if absolute path is provided or not*/
-            /*Ignore base if provided*/
-            /*Remove filename*/
-            /*Find the vnode of the directory given*/
-            dir = pathname;   
-            char *index = strchr(base,'/');
-            strcpy(name, index+1);
-            strncpy(dir, pathname, strlen(base)-strlen(index));
-            strcat(base, dir);
+        /* To be passsed to lookup */
+        vnode_t *dir;
+        /* Temp storage to be passed to look for resolution */
+        char temp[namelen];
 
-            base = vfs_root_vn;
+        if(pathname[0] == '/'){
+            /*Ignore base if provided*/
+            dir = vfs_root_vn;
         }
         else if ( base == NULL ){
             /* Base is NULL means use process's current working directory vnode*/
-            dest = curproc->p_cwd;
+            dir = curproc->p_cwd;
         }
         else {
-            /* Case where base directory is given and file path from base is given */
-            /* Find the parent directory*/
-            /* filename */
-            char *index = strchr(base,'/');
-            if (name==NULL) {
-                /* As the path do not contain any slashes */
-                name = base;
-            }
-            else {
-                strcpy(name, index+1);
-                /*Appending the directorie in path name as well as base.*/
-                strncpy(dir, pathname, strlen(base)-strlen(index));
-                strcat(base, dir);
-            }
+            dir = base;
+        }
+
+        /*Resolving each piece of the pathname*/
+        while(1) {
+        
+
 
         }
 
-        /* length of last charcater */
-        *namelen = strlen(name); 
         /* Apointer to the vnode corresponding to path given*/
         int status = lookup(dest, *name,  namelen, res_vnode)
         return status;
