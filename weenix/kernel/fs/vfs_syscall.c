@@ -119,9 +119,8 @@ fle->f_vnode->vn_ops->(write(fle->fnode,fle->f_pos,buf,nbytes));
 int
 do_close(int fd)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_close");
-        return -1;
-}
+        #being done
+        }
 
 /* To dup a file:
  *      o fget(fd) to up fd's refcount
@@ -142,8 +141,7 @@ do_close(int fd)
 int
 do_dup(int fd)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_dup");
-        return -1;
+       #being done
 }
 
 /* Same as do_dup, but insted of using get_empty_fd() to get the new fd,
