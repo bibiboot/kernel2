@@ -74,5 +74,38 @@ int
 do_open(const char *filename, int oflags)
 {
         NOT_YET_IMPLEMENTED("VFS: do_open");
-        return -1;
+        /*Get free descriptor of current process*/
+        int fd = get_empty_fd(curproc);
+        if(fd < 0){
+            return fd;
+        }
+        file_t *f = fget(fd);
+        /*Set file descriptor of current process*/
+        /*fd of the current process will not be null anymore*/
+        curproc->p_files[fd]=f;
+        /*Set the mode of the file*/
+        
+        /*Call open_namev to get vnode of the file*/
+        /*Result vnode come here*/
+        vnode_t **res_vnode;
+        /*parent vnode*/
+        vnode_t *base;
+        int status = open_namev(filename, offlag, res_vnode, base);
+        if (status < 0){
+            curproc->p_files[fd]=NULL;
+            return status;
+        }
+
+        /*Fill in the file_t*/
+        f->f_mode = ;
+        f->f_pos = 0;
+        if(oflags==O_APPEND){
+            /*Point to the end*/
+            f->f_pos = ;
+        } 
+        f->ref_count = *res->vnode->vn_refcount;
+        f->f_vnode = *res_vnode;
+
+        /*Return new fd*/
+        return fd;
 }
