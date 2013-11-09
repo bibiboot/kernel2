@@ -375,6 +375,7 @@ int
 do_stat(const char *path, struct stat *buf)
 {
         NOT_YET_IMPLEMENTED("VFS: do_stat");
+        /*First comment*/
         return -1;
 }
 
