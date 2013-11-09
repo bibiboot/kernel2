@@ -39,17 +39,18 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
             return ENAMETOOLONG;
         }
 
-        /* Dir has no lookup */
         if(!dir->vn_ops->lookup)
         {
+            /* The file system has no lookup implementation defined*/
             return ENOTDIR;
         }
 
         /*TODO: How to detect . and .. case */
 
         /*returns with the vnode refcount on *result incremented*/
-
-        return dir->vn_ops->lookup(dir, name, name_len, result);
+        /*As vget is calling instead inside the implementation*/
+        int status = dir->vn_ops->lookup(dir, name, name_len, result);
+        return status
 }
 
 
@@ -84,18 +85,19 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
         KASSERT(NULL != name);
         dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
         KASSERT(NULL != res_vnode);
-        dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
-        KASSERT(NULL != /* pointer to corresponding vnode */);
 
+        int i = 0 ;
         vnode_t *dest;
         /* To be passsed to lookup */
         vnode_t *dir;
         /* Temp storage to be passed to look for resolution */
         char temp[namelen];
+        int index = 0
 
         if(pathname[0] == '/'){
             /*Ignore base if provided*/
             dir = vfs_root_vn;
+            index = 1;
         }
         else if ( base == NULL ){
             /* Base is NULL means use process's current working directory vnode*/
@@ -105,17 +107,36 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
             dir = base;
         }
 
+         vnode_t *temp_dir = dir;
         /*Resolving each piece of the pathname*/
-        while(1) {
-        
+        for (;index<=strlen(pathname)-1;index++){
+            i = 0;
+            while(pathname[index]!='/'){
+                /*Storing the path*/
+                temp[i]=pathname[index];
+                index++;
+                i++;
+            }
+            temp[i]='\0';
+            /*Call lookup now*/
+            int status = lookup(temp_dir, temp, strlen(temp)-1, res_vnode);
+            /* In case error is returned in between */
+            if(status<0){
+                return status;
+            }
 
+            /*New parent vnode is res_vnode*/
+            temp_dir = *res_vnode;
 
-        }
+        } 
 
-        /* Apointer to the vnode corresponding to path given*/
-        int status = lookup(dest, *name,  namelen, res_vnode)
-        return status;
-
+        /* Assignning output */
+        name = temp;
+        name_len = strlen(name)-1;
+        /*res_vnode is going to be returned*/
+        dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
+        KASSERT(NULL != *res_vnode);
+        return 0;
 }
 
 /* This returns in res_vnode the vnode requested by the other parameters.
@@ -129,8 +150,23 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 int
 open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
 {
+        /*TODO Cannot understand vget*/
         NOT_YET_IMPLEMENTED("VFS: open_namev");
-        return 0;
+        size_t *namelen;
+        const char **name;
+        /* Status will return if the file is already created or not */
+        int status = dir_namev(pathname, namelen, name, base, res_vnode);
+
+        if(status == ENOENT){
+            if(flag==O_CREAT){
+                /*If the file do not exist then create it */
+                /*Create vnode from vnode_ops function*/
+                /*Create function return status of the operation*/
+                status = base->vn_ops->create(base, name, *name_len, res_vnode); 
+               
+            }
+        }
+        return status;
 }
 
 #ifdef __GETCWD__
