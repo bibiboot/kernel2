@@ -231,11 +231,49 @@ do_mkdir(const char *path)
  *      o ENAMETOOLONG
  *        A component of path was too long.
  */
-int
-do_rmdir(const char *path)
+int do_rmdir(const char *path)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_rmdir");
-        return -1;
+   int len1=0,len2=0,len3=0;
+   size_t path_len;
+   const char *path_name;
+   vnode_t *path_vnode;
+   int ret_val,ret_code;
+
+   if(strlen(path)<1)
+   { 
+      return -EINVAL;
+   }
+
+   ret_val=dir_namev(path, &path_len, &path_name, NULL, &path_vnode);
+   
+   len1=strlen(path_name);
+   len2=len1-1;
+   len3=len1-2;
+
+   if(path_name[len2]=='.')
+   {
+	if(path[len3]=='.')
+	   return -ENOTEMPTY;
+	else
+	   return -EINVAL;
+   }
+   KASSERT(NULL != path_vnode->vn_ops->rmdir);
+   dbg(DBG_INIT,"(GRADING2 3.d)  Directory's vnode is not null\n");
+   
+   ret_code=path_vnode->vn_ops->rm_dir(path_vnode,pathname,path_len);
+   
+   if(ret_code == -ENOTEMPTY)
+   {
+      return ret_code;
+   }
+   if(ret_code == -ENOENT)
+   {
+      return ret_code;
+   }
+   if(ret_code == -ENOTDIR)
+   {
+      return ret_code;
+   }
 }
 
 /*
