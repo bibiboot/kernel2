@@ -407,12 +407,25 @@ do_lseek(int fd, int offset, int whence)
  *      o ENAMETOOLONG
  *        A component of path was too long.
  */
-int
-do_stat(const char *path, struct stat *buf)
+int do_stat(const char *path, struct stat *buf)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_stat");
-        /*First comment*/
-        return -1;
+  int ret_val,ret_code;
+  vonde_t *get_vnode;
+
+  ret_val=open_namev(path, O_RDONLY, &get_vnode, NULL);
+
+  KASSERT(get_vnode->vn_ops->stat);
+  dbg(DBG_INIT,"(GRADING2 3.f) vnode exists\n");
+
+  if(ret_val == -ENOENT)
+     return ret_code;
+  if(ret_val == -ENOTDIR)
+     return ret_code;
+  if(ret_val == -ENAMETOOLOONG)
+     return ret_code;
+   
+  ret_code=get_vnode->vn_ops->stat(get_vnode,buf); 
+  return ret_code;
 }
 
 #ifdef __MOUNTING__
