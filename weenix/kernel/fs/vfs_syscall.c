@@ -246,6 +246,10 @@ int do_rmdir(const char *path)
    }
 
    ret_val=dir_namev(path, &path_len, &path_name, NULL, &path_vnode);
+
+   if(ret_val < 0){
+       return ret_val;
+   }
    
    len1=strlen(path_name);
    len2=len1-1;
@@ -262,7 +266,10 @@ int do_rmdir(const char *path)
    dbg(DBG_INIT,"(GRADING2 3.d)  Directory's vnode is not null\n");
    
    ret_code=path_vnode->vn_ops->rm_dir(path_vnode,pathname,path_len);
+
+   return ret_code;
    
+   /*
    if(ret_code == -ENOTEMPTY)
    {
       return ret_code;
@@ -275,6 +282,7 @@ int do_rmdir(const char *path)
    {
       return ret_code;
    }
+   */
 }
 
 /*
@@ -440,12 +448,17 @@ int do_stat(const char *path, struct stat *buf)
   KASSERT(get_vnode->vn_ops->stat);
   dbg(DBG_INIT,"(GRADING2 3.f) vnode exists\n");
 
+  if(ret_val < 0){
+      return ret_val;
+  }
+  /*
   if(ret_val == -ENOENT)
      return ret_code;
   if(ret_val == -ENOTDIR)
      return ret_code;
-  if(ret_val == -ENAMETOOLOONG)
+  if(ret_val == -ENAMETOOLONG)
      return ret_code;
+  */
    
   ret_code=get_vnode->vn_ops->stat(get_vnode,buf); 
   return ret_code;
