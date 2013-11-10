@@ -233,6 +233,7 @@ do_mkdir(const char *path)
  */
 int do_rmdir(const char *path)
 {
+   NOT_YET_IMPLEMENTED("VFS: do_rmdir");
    int len1=0,len2=0,len3=0;
    size_t path_len;
    const char *path_name;
@@ -409,6 +410,7 @@ do_lseek(int fd, int offset, int whence)
  */
 int do_stat(const char *path, struct stat *buf)
 {
+  NOT_YET_IMPLEMENTED("VFS: do_stat");
   int ret_val,ret_code;
   vonde_t *get_vnode;
 
