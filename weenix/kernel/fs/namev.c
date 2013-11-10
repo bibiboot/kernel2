@@ -36,21 +36,20 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 
         /*Check input*/
         if(len > NAME_LEN){
-            return ENAMETOOLONG;
+            return -ENAMETOOLONG;
         }
 
         if(!dir->vn_ops->lookup)
         {
             /* The file system has no lookup implementation defined*/
-            return ENOTDIR;
+            return -ENOTDIR;
         }
 
         /*TODO: How to detect . and .. case */
 
         /*returns with the vnode refcount on *result incremented*/
-        /*As vget is calling instead inside the implementation*/
         int status = dir->vn_ops->lookup(dir, name, name_len, result);
-        return status
+        return status;
 }
 
 
@@ -72,6 +71,7 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
  * Note: A successful call to this causes vnode refcount on *res_vnode to
  * be incremented.
  */
+/*
 int
 dir_namev(const char *pathname, size_t *namelen, const char **name,
           vnode_t *base, vnode_t **res_vnode)
@@ -88,19 +88,15 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 
         int i = 0 ;
         vnode_t *dest;
-        /* To be passsed to lookup */
         vnode_t *dir;
-        /* Temp storage to be passed to look for resolution */
         char temp[namelen];
         int index = 0
 
         if(pathname[0] == '/'){
-            /*Ignore base if provided*/
             dir = vfs_root_vn;
             index = 1;
         }
         else if ( base == NULL ){
-            /* Base is NULL means use process's current working directory vnode*/
             dir = curproc->p_cwd;
         }
         else {
@@ -108,36 +104,88 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
         }
 
          vnode_t *temp_dir = dir;
-        /*Resolving each piece of the pathname*/
         for (;index<=strlen(pathname)-1;index++){
             i = 0;
             while(pathname[index]!='/'){
-                /*Storing the path*/
                 temp[i]=pathname[index];
                 index++;
                 i++;
             }
             temp[i]='\0';
-            /*Call lookup now*/
             int status = lookup(temp_dir, temp, strlen(temp)-1, res_vnode);
-            /* In case error is returned in between */
             if(status<0){
                 return status;
             }
 
-            /*New parent vnode is res_vnode*/
             temp_dir = *res_vnode;
 
         } 
 
-        /* Assignning output */
         name = temp;
         name_len = strlen(name)-1;
-        /*res_vnode is going to be returned*/
         dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
         KASSERT(NULL != *res_vnode);
         return 0;
 }
+*/
+
+int 
+dir_namev(const char *pathname, size_t *namelen, const char **name, 
+          vnode_t *base,vnode_t **res_vnode)
+{
+        NOT_YET_IMPLEMENTED("VFS: dir_namev");
+
+        KASSERT(NULL != pathname);
+        dbg(DBG_INIT,"(GRADING2 2.b)  pathname is not null\n");
+        KASSERT(NULL != namelen);
+        dbg(DBG_INIT,"(GRADING2 2.b)  namelen is not null\n");
+        KASSERT(NULL != name);
+        dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
+        KASSERT(NULL != res_vnode);
+
+
+      int i=0,j=0,c=0;
+  char *new_path=(char*)malloc(sizeof(char)*1024);
+  vnode_t *current_dir;
+
+  if(pathname[0]=='/')
+     current_dir=vfs_root_vn;
+  else if(base==NULL)
+     current_dir=curproc->p_cwd;
+  else
+     current_dir=base;
+     
+  for(i=0;i<=strlen(pathname);i++){
+
+    if((pathname[i]=='/') || (i == strlen(pathname))){
+	if(i==0)		
+	  continue;
+	else {
+	   new_path[c]='\0';
+	   ret_val=lookup(current_dir,new_path,c,&current_dir);
+	   c=0;
+	   if(ret_val < 0)
+		return ret_val;
+	   vput(current_dir);
+	   if((i+1) == strlen(pathname))
+		break;
+	}
+     }
+     else{
+	new_path[c]=pathname[i];
+	c++;
+     }
+  }
+
+  *name=new_path;
+  *namelen=*c;
+  vref(current_dir);
+  dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
+  KASSERT(NULL != *res_vnode);
+  return 0;
+}
+
+
 
 /* This returns in res_vnode the vnode requested by the other parameters.
  * It makes use of dir_namev and lookup to find the specified vnode (if it
