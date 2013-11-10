@@ -159,6 +159,8 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
 
         if(status == ENOENT){
             if(flag==O_CREAT){
+                KASSERT(NULL != base->vn_ops->create);
+                dbg(DBG_INIT,"(GRADING2 2.c) The callee of create has implementation\n");
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/

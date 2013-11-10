@@ -91,6 +91,50 @@ do_open(const char *filename, int oflags)
             return -ENOMEM;
         }
         
+        int perm = oflags && 3;
+        int extra = oflags && ( 2048 << 2 );
+        int final_mode;
+        int seek;
+        /*perm can be
+         O_RDONLY        0
+         O_WRONLY        1
+         O_RDWR          2
+
+         O_CREAT         0x100   256 Create file if non-existent. 
+         O_TRUNC         0x200   512 Truncate to zero length. 
+         O_APPEND        0x400   1024 Append to file.
+
+         FMODE_READ    1
+         FMODE_WRITE   2
+         FMODE_APPEND  4
+
+         2^11-1
+        */
+
+        if(perm == 0){
+            final_mode = 1;
+            seek = 0;
+        }
+        else if(perm == 1 || perm == 2 || perm == 3){
+            final_mode = 3; 
+            seek = 0;
+        }
+
+        if(extra == 256){
+           /*O_CREAT*/  
+           oflag = O_CREAT;
+        }
+        else if(extra == 512){
+          /*0_TRUNC*/
+          /*TODO*/
+        }
+        else if(extra == 1024){
+            /*O_APPEND*/
+           /*Take default seek*/ 
+        }
+
+          
+
         /*Call open_namev to get vnode of the file*/
         /*Result vnode come here*/
         vnode_t **res_vnode;
@@ -102,7 +146,13 @@ do_open(const char *filename, int oflags)
             return -EINVAL; 
         }
 
-        int status = open_namev(filename, offlag, res_vnode, base);
+        int status = open_namev(filename, oflag, res_vnode, base);
+
+        /*If ISDIR and oflag permissions are */
+         if(_S_TYPE(res_vnode->vn_mode)==S_IFDIR){
+           return -EISDIR; 
+        }
+
         if(status = -E && oflags == O_CREAT){
             curproc->p_files[fd]=NULL;
             return -ENOENT;
@@ -112,10 +162,6 @@ do_open(const char *filename, int oflags)
             return status;
         }
 
-        /*If ISDIR and oflag permissions are */
-         if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR){
-           return -EISDIR; 
-        }
 
         /*Set file descriptor of current process*/
         /*fd of the current process will not be null anymore*/
