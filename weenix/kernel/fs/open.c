@@ -82,9 +82,9 @@ do_open(const char *filename, int oflags)
         if(fd == -EMFILE){
             /*No empty descriptor available*/
             /*Maximum number of files are opened*/
-            return EMFILE;
+            return -EMFILE;
         }
-        file_f *f = fget(-1)
+        file_f *f = fget(-1);
 
         if(f==NULL){
             /*The kalloc operation will return NULL*/
@@ -92,7 +92,7 @@ do_open(const char *filename, int oflags)
         }
         
         int perm = oflags && 3;
-        int extra = oflags && ( 2048 << 2 );
+        int extra = oflags && ( 255 << 2 );
         int final_mode;
         int seek;
         /*perm can be
@@ -112,11 +112,11 @@ do_open(const char *filename, int oflags)
         */
 
         if(perm == 0){
-            final_mode = 1;
+            final_mode = FMODE_READ;
             seek = 0;
         }
         else if(perm == 1 || perm == 2 || perm == 3){
-            final_mode = 3; 
+            final_mode = FMODE_READ | FMODE_WRITE; 
             seek = 0;
         }
 
