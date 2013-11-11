@@ -422,8 +422,25 @@ do_getdent(int fd, struct dirent *dirp)
 int
 do_lseek(int fd, int offset, int whence)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_lseek");
-        return -1;
+        file_t fle;
+        fle=fget(fd);
+        if(fle==NULL)
+        {
+            dbg(DBG_PRINT,"no files available");
+
+        }
+        if(whence==SEEK_SET)
+        {
+            fle->f_pos=offset;
+        }
+        else if(whence == SEEK_CUR)
+        {
+
+        }
+        else if(whence == SEEK_END)
+        {
+
+        }
 }
 
 /*
