@@ -63,7 +63,7 @@ do_read(int fd, void *buf, size_t nbytes)
           fput(fle);
           return -EBADF;
       }
-      int amt_read = fle->f_vnode->vn->ops->(read(fle->f_vnode,fle->f_pos, buf, nbytes));
+      int amt_read = fle->f_vnode->vn_ops->(read(fle->f_vnode,fle->f_pos, buf, nbytes));
       fle->f_pos=fle->f_pos + amt_read;
       fput(fle);
       return amt_read;
