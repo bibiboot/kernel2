@@ -112,6 +112,7 @@ do_open(const char *filename, int oflags)
         */
         if(perm == O_WRONLY | O_RDWR){
             /*Error case for flags*/
+            fput(f);
             return -EINVAL; 
         }
 
@@ -147,15 +148,18 @@ do_open(const char *filename, int oflags)
          if(_S_TYPE(*res_vnode->vn_mode)==S_IFDIR && 
               ( perm != O_RDONLY) ){
            curproc->p_files[fd]=NULL;
+           fput(f);
            return -EISDIR; 
         }
 
         if(status == -ENOENT && oflags != O_CREAT){
             curproc->p_files[fd]=NULL;
+            fput(f);
             return -ENOENT;
         }
         else if (status < 0){
             curproc->p_files[fd]=NULL;
+            fput(f);
             return status;
         }
 
