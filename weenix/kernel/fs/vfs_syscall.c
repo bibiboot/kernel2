@@ -47,23 +47,23 @@ do_read(int fd, void *buf, size_t nbytes)
       fle=fget(fd);
       if(fle==NULL)
       {
-          DBG(DBG_INIT,"file not found");
+          /*DBG(DBG_INIT,"file not found");*/
           return -EBADF;
       }
 
-      if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR)
+      if(_S_TYPE(fle->f_vnode->vn_mode)==S_IFDIR)
       {
           dbg(DBG_INIT,"file is a directory");
           fput(fle);
           return -EISDIR;
       }
-      if(fle->fmode!=FMODE_READ)
+      if(fle->f_mode!=FMODE_READ)
       {
           dbg(DBG_INIT,"file is not in read mode");
           fput(fle);
           return -EBADF;
       }
-      int amt_read = fle->f_vnode->vn_ops->(read(fle->f_vnode,fle->f_pos, buf, nbytes));
+      int amt_read = fle->f_vnode->vn_ops->read(fle->f_vnode,fle->f_pos, buf, nbytes);
       fle->f_pos=fle->f_pos + amt_read;
       fput(fle);
       return amt_read;
@@ -90,13 +90,13 @@ do_write(int fd, const void *buf, size_t nbytes)
           return -EBADF;
       }
 
-      if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR)
+      if(_S_TYPE(fle->f_vnode->vn_mode)==S_IFDIR)
       {
           dbg(DBG_INIT,"file is a directory");
           fput(fle);
           return -EISDIR;
       }
-      if(fle->fmode!=FMODE_WRITE)
+      if(fle->f_mode!=FMODE_WRITE)
       {
 
           dbg(DBG_INIT,"file is not in read mode");
@@ -104,18 +104,18 @@ do_write(int fd, const void *buf, size_t nbytes)
           return -EBADF;
       }
 
-      if(fle->fmode==FMODE_APPEND)
+      if(fle->f_mode==FMODE_APPEND)
       {
          do_lseek(fd, 0, SEEK_END);
       }
 
-      int amt_write = fle->f_vnode->vn_ops->(write(fle->fnode,fle->f_pos,buf,nbytes));
-      fle->fpos=fle->fpos + amt_write;
+      int amt_write = fle->f_vnode->vn_ops->write(fle->f_vnode,fle->f_pos,buf,nbytes);
+      fle->f_pos=fle->f_pos + amt_write;
       fput(fle);
       if (amt_write){
           KASSERT((S_ISCHR(fle->f_vnode->vn_mode)) ||
                   (S_ISBLK(fle->f_vnode->vn_mode)) ||
-                  ((S_ISREG(fle->f_vnode->vn_mode)) && (f->f_pos <= f->f_vnode->vn_len)))
+                  ((S_ISREG(fle->f_vnode->vn_mode)) && (fle->f_pos <= fle->f_vnode->vn_len)));
       }
       return amt_write;
 }
@@ -136,7 +136,7 @@ do_close(int fd)
                 return -EBADF;
         curproc->p_files[fd]=NULL;
         fput(fil);
-
+        return 0;
 }
 
 /* To dup a file:
@@ -167,10 +167,10 @@ do_dup(int fd)
       int fd_new=get_empty_fd(curproc);
       if(fd_new==-EMFILE)
       {
-                fput(fd);
-                return -EMFILE;
+           fput(orig_fil);
+           return -EMFILE;
       }
-      curproc->pfiles[fd_new]=orig_fil;
+      curproc->p_files[fd_new]=orig_fil;
       return fd_new;
 }
 
@@ -192,12 +192,12 @@ do_dup2(int ofd, int nfd)
                 return -EBADF;
         if(nfd>NFILES)
         {
-                fput(ofd);
+                fput(fil);
                 return -EBADF;
         }
-        if(curproc->pfiles[nfd]!=NULL && curproc->pfiles[nfd]!=fil)
+        if(curproc->p_files[nfd]!=NULL && curproc->p_files[nfd]!=fil)
                 do_close(nfd);
-        curproc->pfiles[nfd]=fil;
+        curproc->p_files[nfd]=fil;
         return nfd;
 }
 
@@ -231,13 +231,14 @@ do_mknod(const char *path, int mode, unsigned devid)
 {	
         /*NOT_YET_IMPLEMENTED("VFS: do_mknod");*/
         const char *name;
-        size_t namelen;
-        if(!S_IFBLK(mode)&& !S_IFCHR(mode))
+        size_t namelen = 0;
+        if(!S_ISBLK(mode)&& !S_ISCHR(mode)){
                 return -EINVAL;
+        }
         vnode_t *res_node,*result;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path, namelen, &name, NULL, &res_node);
+        int retval=dir_namev(path, &namelen, &name, NULL, &res_node);
         if(retval==-ENOTDIR)
                 return -ENOTDIR;
         retval= lookup(res_node, name, namelen, &result);
@@ -269,13 +270,13 @@ do_mkdir(const char *path)
 {
         /*NOT_YET_IMPLEMENTED("VFS: do_mkdir");*/
 	const char *name;
-        size_t namelen;
+        size_t namelen = 0;
         vnode_t *res_node,*result;
 
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path,namelen,&name,NULL,&res_node);
-        if(retval=-ENOTDIR)
+        int retval=dir_namev(path, &namelen,&name,NULL,&res_node);
+        if(retval==-ENOTDIR)
                 return -ENOTDIR;
 
         retval=lookup(res_node,name,namelen,&result);
@@ -338,7 +339,7 @@ int do_rmdir(const char *path)
    KASSERT(NULL != path_vnode->vn_ops->rmdir);
    dbg(DBG_INIT,"(GRADING2 3.d)  Directory's vnode is not null\n");
    
-   ret_code=path_vnode->vn_ops->rm_dir(path_vnode,pathname,path_len);
+   ret_code=path_vnode->vn_ops->rmdir(path_vnode,path_name,path_len);
 
    return ret_code;
 }
@@ -360,17 +361,17 @@ int
 do_unlink(const char *path)
 {
         /*OT_YET_IMPLEMENTED("VFS: do_unlink");*/
-        char *name;
-        size_t namelen;
+        const char **name = NULL;
+        size_t namelen = 0;
         vnode_t *res_node,*result;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path,namelen, &name,NULL, &res_node);
+        int retval=dir_namev(path, &namelen, name,NULL, &res_node);
         if(retval < 0){
             return retval;
         }
 
-        retval=lookup(res_node,name,namelen, &result);
+        retval=lookup(res_node, *name,namelen, &result);
         if(retval < 0){
             return retval;
         }
@@ -386,7 +387,7 @@ do_unlink(const char *path)
                 vput(result);
                 return -EISDIR;
         }
-        return res_node->vn_ops->unlink(res_node,name,namelen);
+        return res_node->vn_ops->unlink(res_node, *name,namelen);
 }
 
 /* To link:
@@ -412,7 +413,7 @@ int
 do_link(const char *from, const char *to)
 {
         /* NOT_YET_IMPLEMENTED("VFS: do_link");*/
-        char* name;
+        const char **name = NULL;
         size_t namelen;
         vnode_t *res_node_source, *res_node_dest,*result;
         if(strlen(from)>MAXPATHLEN)
@@ -421,13 +422,13 @@ do_link(const char *from, const char *to)
                 return -ENAMETOOLONG;
 
 
-        int retval=open_namev(from, 0,*res_node_source,NULL);
+        int retval=open_namev(from,0, &res_node_source,NULL);
         if(retval < 0){
             /*vput(res_node_source);*/
             return retval;
         }
 
-        retval=dir_namev(to,namelen,*name,NULL,*res_node_dest)
+        retval=dir_namev(to, &namelen, name,NULL, &res_node_dest);
         if(retval < 0){
             /*vput(res_node_dest);
             vput(res_node_source);*/
@@ -440,12 +441,12 @@ do_link(const char *from, const char *to)
                 return -ENOENT;
         */
 
-        retval=lookup(res_node_dest,name,namelen,*result);
+        retval=lookup(res_node_dest,*name,namelen, &result);
         if(retval>0)
                { vput(result);
                  return -EEXIST;
                 }
-        retval=res_node_dest->vn_ops->link(res_node_dest,res_node_source,name,namelen);
+        retval=res_node_dest->vn_ops->link(res_node_dest,res_node_source,*name,namelen);
 
         vput(res_node_dest);
         vput(res_node_source);
@@ -492,9 +493,9 @@ do_chdir(const char *path)
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
         int retval=open_namev(path,0, &res_node,NULL);
-        if(retval=-ENOTDIR)
+        if(retval==-ENOTDIR)
                 return -ENOTDIR;
-        if(retval=-ENOENT)
+        if(retval==-ENOENT)
                 return -ENOENT;
         vput(curproc->p_cwd);
         curproc->p_cwd=res_node;
@@ -560,9 +561,10 @@ do_getdent(int fd, struct dirent *dirp)
 int
 do_lseek(int fd, int offset, int whence)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_lseek DONE");
+        /*NOT_YET_IMPLEMENTED("VFS: do_lseek DONE");*/
         /* Get the file */
         file_t *fle;
+        int fpos;
         fle=fget(fd);
         if(fle==NULL)
         {
@@ -614,9 +616,9 @@ do_lseek(int fd, int offset, int whence)
  */
 int do_stat(const char *path, struct stat *buf)
 {
-  NOT_YET_IMPLEMENTED("VFS: do_stat DONE");
+  /*NOT_YET_IMPLEMENTED("VFS: do_stat DONE");*/
   int ret_val,ret_code;
-  vonde_t *get_vnode;
+  vnode_t *get_vnode;
 
   ret_val=open_namev(path, O_RDONLY, &get_vnode, NULL);
 
