@@ -196,7 +196,7 @@ bootstrap(int arg1, void *arg2)
 	/*sched_make_runnable(curthr); */    
 	context_make_active(&thread0->kt_ctx);
 
-
+        return 0;
 
 }
 
