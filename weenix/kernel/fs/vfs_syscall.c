@@ -41,7 +41,7 @@
 int
 do_read(int fd, void *buf, size_t nbytes)
 {
-       
+      /*NOT_YET_IMPLEMENTED("VFS: do_read");*/
       file_t *fle;
 
       fle=fget(fd);
@@ -80,6 +80,7 @@ do_read(int fd, void *buf, size_t nbytes)
 int
 do_write(int fd, const void *buf, size_t nbytes)
 {
+      /*NOT_YET_IMPLEMENTED("VFS: do_write");*/
       file_t *fle;
 
       fle=fget(fd);
@@ -129,7 +130,8 @@ do_write(int fd, const void *buf, size_t nbytes)
 int
 do_close(int fd)
 {
-       file_t fil=fget(fd);
+       /*NOT_YET_IMPLEMENTED("VFS: do_close");*/
+       file_t *fil=fget(fd);
         if(fil==NULL)
                 return -EBADF;
         curproc->p_files[fd]=NULL;
@@ -156,18 +158,20 @@ do_close(int fd)
 int
 do_dup(int fd)
 {
-      file_t *fil=fget(fd);
-        if(fd==NULL)
+      /*NOT_YET_IMPLEMENTED("VFS: do_dup");*/
+      file_t *orig_fil=fget(fd);
+      if(fd==NULL){
         return -EBADF;
-        int fd_new=get_empty_fd(curproc);
-        if(fd_new==-EMFILE)
-        {
+      }
+      
+      int fd_new=get_empty_fd(curproc);
+      if(fd_new==-EMFILE)
+      {
                 fput(fd);
                 return -EMFILE;
-        }
-        curproc->pfiles[fd_new]=fil;
-        return fd_new;
-  
+      }
+      curproc->pfiles[fd_new]=orig_fil;
+      return fd_new;
 }
 
 /* Same as do_dup, but insted of using get_empty_fd() to get the new fd,
@@ -182,6 +186,7 @@ do_dup(int fd)
 int
 do_dup2(int ofd, int nfd)
 {
+        /*NOT_YET_IMPLEMENTED("VFS: do_dup2");*/
         file_t *fil=fget(ofd);
         if(fil==NULL)
                 return -EBADF;
@@ -194,10 +199,6 @@ do_dup2(int ofd, int nfd)
                 do_close(nfd);
         curproc->pfiles[nfd]=fil;
         return nfd;
-
-        
-        /*NOT_YET_IMPLEMENTED("VFS: do_dup2");
-        return -1;*/
 }
 
 /*
@@ -227,27 +228,26 @@ do_dup2(int ofd, int nfd)
  */
 int
 do_mknod(const char *path, int mode, unsigned devid)
-{	const char *name;
+{	
+        /*NOT_YET_IMPLEMENTED("VFS: do_mknod");*/
+        const char *name;
         size_t namelen;
         if(!S_IFBLK(mode)&& !S_IFCHR(mode))
                 return -EINVAL;
         vnode_t *res_node,*result;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path,namelen,*name,NULL,*res_node);
-        if(retval=-ENOTDIR)
+        int retval=dir_namev(path, namelen, &name, NULL, &res_node);
+        if(retval==-ENOTDIR)
                 return -ENOTDIR;
-        retval= lookup(res_node,name,namelen,*result);
+        retval= lookup(res_node, name, namelen, &result);
         if(retval>0)
-               {
-                         vput(result);
-                         return -EEXIST;
-               }
+        {
+             vput(result);
+             return -EEXIST;
+        }
         /*if(S_IFBLK(res_node->vn_mode)|| S_IFCHR(res_node->vn_mode))*/
-        return res_node->vn_ops->mknod(res_node,name,namelen,mode,devid);
-
-        /*NOT_YET_IMPLEMENTED("VFS: do_mknod");
-        return -1;*/
+        return res_node->vn_ops->mknod(res_node, name, namelen, mode, devid);
 }
 
 /* Use dir_namev() to find the vnode of the dir we want to make the new
@@ -267,25 +267,23 @@ do_mknod(const char *path, int mode, unsigned devid)
 int
 do_mkdir(const char *path)
 {
+        /*NOT_YET_IMPLEMENTED("VFS: do_mkdir");*/
 	const char *name;
         size_t namelen;
         vnode_t *res_node,*result;
 
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path,namelen,*name,NULL,*res_node);
+        int retval=dir_namev(path,namelen,&name,NULL,&res_node);
         if(retval=-ENOTDIR)
                 return -ENOTDIR;
 
-        retval=lookup(res_node,name,namelen,*result);
+        retval=lookup(res_node,name,namelen,&result);
         if(retval>0)
         {       vput(result);
                 return -EEXIST;
         }
         return res_node->vn_ops->mkdir(res_node,name,namelen);
-
-        /*NOT_YET_IMPLEMENTED("VFS: do_mkdir");
-        return -1;*/
 }
 
 /* Use dir_namev() to find the vnode of the directory containing the dir to be
@@ -361,22 +359,27 @@ int do_rmdir(const char *path)
 int
 do_unlink(const char *path)
 {
+        /*OT_YET_IMPLEMENTED("VFS: do_unlink");*/
         char *name;
         size_t namelen;
         vnode_t *res_node,*result;
-          if(strlen(path)>MAXPATHLEN)
+        if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path,namelen,*name,NULL,*res_node);
-        if(retval=-ENOTDIR)
-                return -ENOTDIR;
-        if(retval=-ENOENT)
-                return -ENOENT;
+        int retval=dir_namev(path,namelen, &name,NULL, &res_node);
+        if(retval < 0){
+            return retval;
+        }
 
-        retval=lookup(res_node,name,namelen,*result);
-        if(retval=-ENOTDIR)
+        retval=lookup(res_node,name,namelen, &result);
+        if(retval < 0){
+            return retval;
+        }
+        /*
+        if(retval==-ENOTDIR)
                 return -ENOTDIR;
-        if(retval=-ENOENT)
+        if(retval==-ENOENT)
                 return -ENOENT;
+        */
 
         if(S_ISDIR(result->vn_mode))
         {
@@ -384,8 +387,6 @@ do_unlink(const char *path)
                 return -EISDIR;
         }
         return res_node->vn_ops->unlink(res_node,name,namelen);
-/*OT_YET_IMPLEMENTED("VFS: do_unlink");
-        return -1;*/
 }
 
 /* To link:
@@ -410,7 +411,8 @@ do_unlink(const char *path)
 int
 do_link(const char *from, const char *to)
 {
-       char* name;
+        /* NOT_YET_IMPLEMENTED("VFS: do_link");*/
+        char* name;
         size_t namelen;
         vnode_t *res_node_source, *res_node_dest,*result;
         if(strlen(from)>MAXPATHLEN)
@@ -419,17 +421,24 @@ do_link(const char *from, const char *to)
                 return -ENAMETOOLONG;
 
 
-        int retval=open_namev(from,0,*res_node_source,NULL);
-        if(retval=-ENOTDIR)
-                return -ENOTDIR;
-        if(retval=-ENOENT)
-                return -ENOENT;
+        int retval=open_namev(from, 0,*res_node_source,NULL);
+        if(retval < 0){
+            /*vput(res_node_source);*/
+            return retval;
+        }
 
         retval=dir_namev(to,namelen,*name,NULL,*res_node_dest)
+        if(retval < 0){
+            /*vput(res_node_dest);
+            vput(res_node_source);*/
+            return retval;
+        }
+        /*
         if(retval=-ENOTDIR)
                 return -ENOTDIR;
         if(retval=-ENOENT)
                 return -ENOENT;
+        */
 
         retval=lookup(res_node_dest,name,namelen,*result);
         if(retval>0)
@@ -440,11 +449,7 @@ do_link(const char *from, const char *to)
 
         vput(res_node_dest);
         vput(res_node_source);
-        /* NOT_YET_IMPLEMENTED("VFS: do_link");
-        return -1;*/
         return retval;
- /*NOT_YET_IMPLEMENTED("VFS: do_link");
-        return -1;*/
 }
 
 /*      o link newname to oldname
@@ -458,13 +463,12 @@ do_link(const char *from, const char *to)
 int
 do_rename(const char *oldname, const char *newname)
 {
+        /*_YET_IMPLEMENTED("VFS: do_rename");*/
         int retval=do_link(newname,oldname);
         if(retval<=0)
                 return retval;
         else
                 return do_unlink(oldname);
-/*_YET_IMPLEMENTED("VFS: do_rename");
-        return -1;*/
 }
 
 /* Make the named directory the current process's cwd (current working
@@ -483,10 +487,11 @@ do_rename(const char *oldname, const char *newname)
 int
 do_chdir(const char *path)
 {
+        /*  NOT_YET_IMPLEMENTED("VFS: do_chdir");*/
 	vnode_t *res_node;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=open_namev(path,0,*res_node,NULL);
+        int retval=open_namev(path,0, &res_node,NULL);
         if(retval=-ENOTDIR)
                 return -ENOTDIR;
         if(retval=-ENOENT)
@@ -494,8 +499,6 @@ do_chdir(const char *path)
         vput(curproc->p_cwd);
         curproc->p_cwd=res_node;
         return 0;
-     /*  NOT_YET_IMPLEMENTED("VFS: do_chdir");
-        return -1;*/
 }
 
 /* Call the readdir f_op on the given fd, filling in the given dirent_t*.
