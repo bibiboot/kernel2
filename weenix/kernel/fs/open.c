@@ -110,6 +110,10 @@ do_open(const char *filename, int oflags)
 
          2^11-1
         */
+        if(perm == O_WRONLY | O_RDWR){
+            /*Error case for flags*/
+            return -EINVAL; 
+        }
 
         if(perm == 0){
             final_mode = FMODE_READ;
@@ -120,20 +124,16 @@ do_open(const char *filename, int oflags)
             seek = 0;
         }
 
-        if(extra == 256){
+        if(extra&256 != 0){
            /*O_CREAT*/  
            oflag = O_CREAT;
         }
-        else if(extra == 512){
+
+        if(extra&512 != 0){
           /*0_TRUNC*/
           /*TODO*/
         }
-        else if(extra == 1024){
-            /*O_APPEND*/
-           /*Take default seek*/ 
-        }
 
-          
 
         /*Call open_namev to get vnode of the file*/
         /*Result vnode come here*/
@@ -141,19 +141,16 @@ do_open(const char *filename, int oflags)
         /*parent vnode*/
         vnode_t *base;
 
-        if(oflags == O_WRONLY | O_RDWR){
-            /*Error case for flags*/
-            return -EINVAL; 
-        }
-
         int status = open_namev(filename, oflag, res_vnode, base);
 
         /*If ISDIR and oflag permissions are */
-         if(_S_TYPE(res_vnode->vn_mode)==S_IFDIR){
+         if(_S_TYPE(*res_vnode->vn_mode)==S_IFDIR && 
+              ( perm != O_RDONLY) ){
+           curproc->p_files[fd]=NULL;
            return -EISDIR; 
         }
 
-        if(status = -E && oflags == O_CREAT){
+        if(status == -ENOENT && oflags != O_CREAT){
             curproc->p_files[fd]=NULL;
             return -ENOENT;
         }
@@ -163,16 +160,22 @@ do_open(const char *filename, int oflags)
         }
 
 
+        if(extra&1024 != 0){
+            /*O_APPEND*/
+           /*Take default seek*/ 
+           seek = *res_vnode->vn_len;
+        }
+
         /*Set file descriptor of current process*/
         /*fd of the current process will not be null anymore*/
         curproc->p_files[fd]=f;
 
         /*Fill in the file_t*/
-        f->f_pos = 0;
+        f->f_pos = seek;
         f->ref_count = *res->vnode->vn_refcount;
         f->f_vnode = *res_vnode;
         /*Set the mode of the file*/
-        f->f_mode = ;
+        f->f_mode = final_mode;
 
         /*Return new fd*/
         return fd;
