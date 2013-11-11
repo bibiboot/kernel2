@@ -202,8 +202,13 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
         NOT_YET_IMPLEMENTED("VFS: open_namev");
         size_t *namelen;
         const char **name;
+        vnode_t *final_vnode;
         /* Status will return if the file is already created or not */
         int status = dir_namev(pathname, namelen, name, base, res_vnode);
+        if(status < 0){
+            return status;
+        }
+        status = lookup(*res_vnode, *name, *namelen, final_vnode);
 
         if(status == -ENOENT){
             if(flag==O_CREAT){
