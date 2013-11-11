@@ -111,6 +111,11 @@ do_write(int fd, const void *buf, size_t nbytes)
       int amt_write = fle->f_vnode->vn_ops->(write(fle->fnode,fle->f_pos,buf,nbytes));
       fle->fpos=fle->fpos + amt_write;
       fput(fle);
+      if (amt_write){
+          KASSERT((S_ISCHR(fle->f_vnode->vn_mode)) ||
+                  (S_ISBLK(fle->f_vnode->vn_mode)) ||
+                  ((S_ISREG(fle->f_vnode->vn_mode)) && (f->f_pos <= f->f_vnode->vn_len)))
+      }
       return amt_write;
 }
 

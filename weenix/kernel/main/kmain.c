@@ -329,9 +329,12 @@ initproc_run(int arg1, void *arg2)
        
 #ifdef __DRIVERS__
 	
-        kshell_add_command("Sunghan test", Sunghantest, "\n");
+        /*kshell_add_command("Sunghan test", Sunghantest, "\n");
 	kshell_add_command("Faber Test",fabertest,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");
+	kshell_add_command("deadlock test",Sunghandeadlock,"\n");*/
+	kshell_add_command("vfstest_main", vfstest_main,"\n");
+        /*vfstest_main() (with argc=1 and argv=NULL)*/
         kshell_t *kshell = kshell_create(0);
         if (NULL == kshell) panic("init: Couldn't create kernel shell\n");
         while(kshell_execute_next(kshell));
