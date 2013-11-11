@@ -2,7 +2,6 @@
 # normal build system output
 *.[od]
 *.pyc
-*.gdbcomm
 
 .staging
 # editor temporary files
