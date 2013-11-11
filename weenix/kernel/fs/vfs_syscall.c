@@ -86,7 +86,7 @@ do_write(int fd, const void *buf, size_t nbytes)
       fle=fget(fd);
       if(fle==NULL)
       {
-          DBG(DBG_INIT,"file not found");
+          /*DBG(DBG_INIT,"file not found");*/
           return -EBADF;
       }
 

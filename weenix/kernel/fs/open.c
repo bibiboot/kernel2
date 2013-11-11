@@ -73,7 +73,7 @@ get_empty_fd(proc_t *p)
 int
 do_open(const char *filename, int oflags)
 {
-        NOT_YET_IMPLEMENTED("VFS: do_open");
+        /*NOT_YET_IMPLEMENTED("VFS: do_open");*/
         if(strlen(filename) > NAME_LEN){
             return -ENAMETOOLONG;
         }
@@ -110,7 +110,7 @@ do_open(const char *filename, int oflags)
 
          2^11-1
         */
-        if(perm == O_WRONLY | O_RDWR){
+        if(perm == (O_WRONLY | O_RDWR)){
             /*Error case for flags*/
             fput(f);
             return -EINVAL; 
@@ -125,12 +125,12 @@ do_open(const char *filename, int oflags)
             seek = 0;
         }
 
-        if(extra&256 != 0){
+        if((extra&256) != 0){
            /*O_CREAT*/  
            oflags = O_CREAT;
         }
 
-        if(extra&512 != 0){
+        if((extra&512) != 0){
           /*0_TRUNC*/
           /*TODO*/
         }
@@ -138,9 +138,9 @@ do_open(const char *filename, int oflags)
 
         /*Call open_namev to get vnode of the file*/
         /*Result vnode come here*/
-        vnode_t **res_vnode;
+        vnode_t **res_vnode=NULL;
         /*parent vnode*/
-        vnode_t *base;
+        vnode_t *base = NULL;
 
         int status = open_namev(filename, oflags, res_vnode, base);
 
@@ -164,7 +164,7 @@ do_open(const char *filename, int oflags)
         }
 
 
-        if(extra&1024 != 0){
+        if((extra&1024) != 0){
             /*O_APPEND*/
            /*Take default seek*/ 
            seek = (*res_vnode)->vn_len;

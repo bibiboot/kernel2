@@ -27,7 +27,7 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         /*NOT_YET_IMPLEMENTED("VFS: lookup");*/
 
-        int name_len;
+        int name_len = 0;
         KASSERT(NULL != dir);
         dbg(DBG_INIT,"(GRADING2 2.a)  Dir is not null\n");
         KASSERT(NULL != name);
@@ -203,15 +203,15 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
 {
         /*TODO Cannot understand vget*/
         NOT_YET_IMPLEMENTED("VFS: open_namev");
-        size_t *namelen;
-        const char **name;
-        vnode_t *final_vnode;
+        size_t *namelen = NULL;
+        const char **name = NULL;
+        vnode_t *final_vnode = NULL;
         /* Status will return if the file is already created or not */
         int status = dir_namev(pathname, namelen, name, base, res_vnode);
         if(status < 0){
             return status;
         }
-        status = lookup(*res_vnode, *name, *namelen, final_vnode);
+        status = lookup(*res_vnode, *name, *namelen, &final_vnode);
 
         if(status == -ENOENT){
             if(flag==O_CREAT){
