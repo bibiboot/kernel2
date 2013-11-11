@@ -238,14 +238,14 @@ idleproc_run(int arg1, void *arg2)
         /* Here you need to make the null, zero, and tty devices using mknod */
         /* You can't do this until you have VFS, check the include/drivers/dev.h
          * file for macros with the device ID's you will need to pass to mknod */
-        NOT_YET_IMPLEMENTED("VFS: idleproc_run");
+        /*NOT_YET_IMPLEMENTED("VFS: idleproc_run");*/
         /*TODO Dont know When VFS will be formed*/
         /*Block devices*/
-        mknod("/dev/null", S_IFBLK, MEM_NULL_DEVID); 
+        do_mknod("/dev/null", S_IFBLK, MEM_NULL_DEVID); 
         /*Block devices*/
-        mknod("/dev/zero", S_IFBLK, MEM_ZERO_DEVID); 
+        do_mknod("/dev/zero", S_IFBLK, MEM_ZERO_DEVID); 
         /*Byte devices*/
-        mknod("/dev/tty0", S_IFCHR, MKDEVID(2, 0)); 
+        do_mknod("/dev/tty0", S_IFCHR, MKDEVID(2, 0)); 
 #endif
 
         /* Finally, enable interrupts (we want to make sure interrupts

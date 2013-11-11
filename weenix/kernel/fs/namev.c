@@ -27,6 +27,7 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         /*NOT_YET_IMPLEMENTED("VFS: lookup");*/
 
+        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP START\n");
         int name_len = 0;
         KASSERT(NULL != dir);
         dbg(DBG_INIT,"(GRADING2 2.a)  Dir is not null\n");
@@ -40,11 +41,13 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
             return -ENAMETOOLONG;
         }
 
-        if(!dir->vn_ops->lookup)
+        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END\n");
+        if(dir->vn_ops == NULL || dir->vn_ops->lookup == NULL)
         {
             /* The file system has no lookup implementation defined*/
             return -ENOTDIR;
         }
+        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END\n");
 
         /*TODO: How to detect . and .. case */
 
