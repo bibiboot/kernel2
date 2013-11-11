@@ -205,7 +205,7 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
         /* Status will return if the file is already created or not */
         int status = dir_namev(pathname, namelen, name, base, res_vnode);
 
-        if(status == ENOENT){
+        if(status == -ENOENT){
             if(flag==O_CREAT){
                 KASSERT(NULL != base->vn_ops->create);
                 dbg(DBG_INIT,"(GRADING2 2.c) The callee of create has implementation\n");
