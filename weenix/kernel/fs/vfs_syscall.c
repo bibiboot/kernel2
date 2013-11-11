@@ -42,29 +42,31 @@ int
 do_read(int fd, void *buf, size_t nbytes)
 {
        
-       file_t fle;
+      file_t *fle;
 
-       fle=fget(fd);
+      fle=fget(fd);
       if(fle==NULL)
       {
           DBG(DBG_INIT,"file not found");
+          return -EBADF;
       }
 
       if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR)
       {
           dbg(DBG_INIT,"file is a directory");
-          return EISDIR;
+          fput(fle);
+          return -EISDIR;
       }
-  if(fle->fmode!=FMODE_READ)
+      if(fle->fmode!=FMODE_READ)
       {
-
           dbg(DBG_INIT,"file is not in read mode");
-          return EBADF;
+          fput(fle);
+          return -EBADF;
       }
-      fle->f_vnode->vn->ops->(read(fle->fnode,fle->fpos,buf,nbytes));
-      fle->fpos=fle->fpos+buf;
+      int amt_read = fle->f_vnode->vn->ops->(read(fle->f_vnode,fle->f_pos, buf, nbytes));
+      fle->f_pos=fle->f_pos + amt_read;
       fput(fle);
-      return nbytes;
+      return amt_read;
 }
 
 /* Very similar to do_read.  Check f_mode to be sure the file is writable.  If
@@ -78,35 +80,38 @@ do_read(int fd, void *buf, size_t nbytes)
 int
 do_write(int fd, const void *buf, size_t nbytes)
 {
-         file_t fle;
+      file_t *fle;
 
-       fle=fget(fd);
-        if(fle==NULL)
+      fle=fget(fd);
+      if(fle==NULL)
       {
           DBG(DBG_INIT,"file not found");
+          return -EBADF;
       }
 
       if(_S_TYPE(fle->vnode->vn_mode)==S_IFDIR)
       {
           dbg(DBG_INIT,"file is a directory");
-          return EISDIR;
+          fput(fle);
+          return -EISDIR;
       }
-  if(fle->fmode!=FMODE_WRITE)
+      if(fle->fmode!=FMODE_WRITE)
       {
 
           dbg(DBG_INIT,"file is not in read mode");
-          return EBADF;
+          fput(fle);
+          return -EBADF;
       }
+
       if(fle->fmode==FMODE_APPEND)
       {
-
-         do_lseek();//call lseek here..wil complete it after finishing lseek
+         do_lseek(fd, 0, SEEK_END);
       }
 
-fle->f_vnode->vn_ops->(write(fle->fnode,fle->f_pos,buf,nbytes));
-      fle->fpos=fle->fpos+buf;
+      int amt_write = fle->f_vnode->vn_ops->(write(fle->fnode,fle->f_pos,buf,nbytes));
+      fle->fpos=fle->fpos + amt_write;
       fput(fle);
-      return nbytes;
+      return amt_write;
 }
 
 /*
@@ -268,21 +273,6 @@ int do_rmdir(const char *path)
    ret_code=path_vnode->vn_ops->rm_dir(path_vnode,pathname,path_len);
 
    return ret_code;
-   
-   /*
-   if(ret_code == -ENOTEMPTY)
-   {
-      return ret_code;
-   }
-   if(ret_code == -ENOENT)
-   {
-      return ret_code;
-   }
-   if(ret_code == -ENOTDIR)
-   {
-      return ret_code;
-   }
-   */
 }
 
 /*
@@ -384,7 +374,7 @@ do_chdir(const char *path)
 int
 do_getdent(int fd, struct dirent *dirp)
 {
-   NOT_YET_IMPLEMENTED("VFS: do_getdent");
+   NOT_YET_IMPLEMENTED("VFS: do_getdent DONE");
    int to_add;
    file_t *file_fd;
    
@@ -395,11 +385,14 @@ do_getdent(int fd, struct dirent *dirp)
    }
    if(!S_ISDIR(file_fd->f_vnode->vn_mode))
    {
+      fput(file_fd);
       return -ENOTDIR;
    }
    
-   if(!file_fd->f_vnode->vn_ops->readdir)
+   if(!file_fd->f_vnode->vn_ops->readdir){
+      fput(file_fd);
       return 0;
+   }
    
    to_add = file_fd->f_vnode->vn_ops->readdir(file_fd->f_vnode,file_fd->f_pos,dirp);
    if(to_add>0)
@@ -422,25 +415,45 @@ do_getdent(int fd, struct dirent *dirp)
 int
 do_lseek(int fd, int offset, int whence)
 {
-        file_t fle;
+        NOT_YET_IMPLEMENTED("VFS: do_lseek DONE");
+        /* Get the file */
+        file_t *fle;
         fle=fget(fd);
         if(fle==NULL)
         {
             dbg(DBG_PRINT,"no files available");
-
+            return -EBADF;
         }
+
+        /*SEEK_SET: Relative to beginining of file*/
+        /*SEEK_CUR: Relative to current position of file*/
+        /*SEEK_END: Relative to end of the file. the offset must be negative*/
         if(whence==SEEK_SET)
         {
-            fle->f_pos=offset;
+            fpos=offset;
         }
         else if(whence == SEEK_CUR)
         {
+            fpos=fle->f_pos+offset;
 
         }
         else if(whence == SEEK_END)
         {
-
+            /*TODO Check or not*/
+            fpos=fle->f_vnode->vn_len+offset;
         }
+        else{
+            fput(fle);
+            return -EINVAL;
+        }
+
+        if(fpos<0){
+            fput(fle);
+            return -EINVAL;
+        }
+        fle->f_pos = fpos;
+        fput(fle);
+        return 0; 
 }
 
 /*
@@ -456,7 +469,7 @@ do_lseek(int fd, int offset, int whence)
  */
 int do_stat(const char *path, struct stat *buf)
 {
-  NOT_YET_IMPLEMENTED("VFS: do_stat");
+  NOT_YET_IMPLEMENTED("VFS: do_stat DONE");
   int ret_val,ret_code;
   vonde_t *get_vnode;
 
