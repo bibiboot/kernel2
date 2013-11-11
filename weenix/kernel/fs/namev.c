@@ -27,6 +27,7 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         NOT_YET_IMPLEMENTED("VFS: lookup");
 
+        int name_len;
         KASSERT(NULL != dir);
         dbg(DBG_INIT,"(GRADING2 2.a)  Dir is not null\n");
         KASSERT(NULL != name);
@@ -145,7 +146,8 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 
 
       int i=0,j=0,c=0;
-  char *new_path=(char*)malloc(sizeof(char)*1024);
+      /*char *new_path=(char*)malloc(sizeof(char)*1024);*/
+      char new_path[1024];
   vnode_t *current_dir;
 
   if(pathname[0]=='/')
