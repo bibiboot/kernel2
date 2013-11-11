@@ -25,7 +25,7 @@
 int
 lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
-        NOT_YET_IMPLEMENTED("VFS: lookup");
+        /*NOT_YET_IMPLEMENTED("VFS: lookup");*/
 
         int name_len;
         KASSERT(NULL != dir);
@@ -134,7 +134,7 @@ int
 dir_namev(const char *pathname, size_t *namelen, const char **name, 
           vnode_t *base,vnode_t **res_vnode)
 {
-        NOT_YET_IMPLEMENTED("VFS: dir_namev");
+        /*NOT_YET_IMPLEMENTED("VFS: dir_namev");*/
 
         KASSERT(NULL != pathname);
         dbg(DBG_INIT,"(GRADING2 2.b)  pathname is not null\n");
@@ -220,7 +220,7 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/
-                status = res_vnode->vn_ops->create(base, *name, *namelen, res_vnode); 
+                status = *res_vnode->vn_ops->create(base, *name, *namelen, res_vnode); 
                
             }
         }
