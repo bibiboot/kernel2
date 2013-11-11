@@ -16,6 +16,7 @@
 #include "proc/proc.h"
 #include "proc/kmutex.h"
 
+/*Hell8*/
 typedef struct my_node {
 	int length;
 	kmutex_t my_mutex;
