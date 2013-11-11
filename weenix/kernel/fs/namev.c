@@ -22,7 +22,7 @@
  *
  * Note: returns with the vnode refcount on *result incremented.
  */
-int
+int 
 lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         /*NOT_YET_IMPLEMENTED("VFS: lookup");*/
@@ -181,7 +181,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
   }
 
   *name=new_path;
-  *namelen=*c;
+  *namelen=c;
   vref(current_dir);
   dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
   KASSERT(NULL != *res_vnode);
@@ -220,7 +220,7 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/
-                status = *res_vnode->vn_ops->create(base, *name, *namelen, res_vnode); 
+                status = (*res_vnode)->vn_ops->create(base, *name, *namelen, res_vnode); 
                
             }
         }

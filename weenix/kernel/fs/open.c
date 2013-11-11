@@ -84,15 +84,15 @@ do_open(const char *filename, int oflags)
             /*Maximum number of files are opened*/
             return -EMFILE;
         }
-        file_f *f = fget(-1);
+        file_t *f = fget(-1);
 
         if(f==NULL){
             /*The kalloc operation will return NULL*/
             return -ENOMEM;
         }
         
-        int perm = oflags && 3;
-        int extra = oflags && ( 255 << 2 );
+        int perm = oflags&3;
+        int extra = oflags&(255<<2);
         int final_mode;
         int seek;
         /*perm can be
@@ -127,7 +127,7 @@ do_open(const char *filename, int oflags)
 
         if(extra&256 != 0){
            /*O_CREAT*/  
-           oflag = O_CREAT;
+           oflags = O_CREAT;
         }
 
         if(extra&512 != 0){
@@ -142,10 +142,10 @@ do_open(const char *filename, int oflags)
         /*parent vnode*/
         vnode_t *base;
 
-        int status = open_namev(filename, oflag, res_vnode, base);
+        int status = open_namev(filename, oflags, res_vnode, base);
 
         /*If ISDIR and oflag permissions are */
-         if(_S_TYPE(*res_vnode->vn_mode)==S_IFDIR && 
+         if(_S_TYPE((*res_vnode)->vn_mode)==S_IFDIR && 
               ( perm != O_RDONLY) ){
            curproc->p_files[fd]=NULL;
            fput(f);
@@ -167,7 +167,7 @@ do_open(const char *filename, int oflags)
         if(extra&1024 != 0){
             /*O_APPEND*/
            /*Take default seek*/ 
-           seek = *res_vnode->vn_len;
+           seek = (*res_vnode)->vn_len;
         }
 
         /*Set file descriptor of current process*/
@@ -176,7 +176,7 @@ do_open(const char *filename, int oflags)
 
         /*Fill in the file_t*/
         f->f_pos = seek;
-        f->ref_count = *res->vnode->vn_refcount;
+        f->f_refcount = (*res_vnode)->vn_refcount;
         f->f_vnode = *res_vnode;
         /*Set the mode of the file*/
         f->f_mode = final_mode;
