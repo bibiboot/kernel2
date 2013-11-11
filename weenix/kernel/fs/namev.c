@@ -149,6 +149,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
       /*char *new_path=(char*)malloc(sizeof(char)*1024);*/
       char new_path[1024];
   vnode_t *current_dir;
+  int ret_val;
 
   if(pathname[0]=='/')
      current_dir=vfs_root_vn;
@@ -219,7 +220,7 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/
-                status = base->vn_ops->create(base, name, *name_len, res_vnode); 
+                status = res_vnode->vn_ops->create(base, *name, *namelen, res_vnode); 
                
             }
         }
