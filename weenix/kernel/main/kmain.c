@@ -240,12 +240,17 @@ idleproc_run(int arg1, void *arg2)
          * file for macros with the device ID's you will need to pass to mknod */
         /*NOT_YET_IMPLEMENTED("VFS: idleproc_run");*/
         /*TODO Dont know When VFS will be formed*/
+
+        if(do_mkdir("/dev") >= 0)
+        {
         /*Block devices*/
-        do_mknod("/dev/null", S_IFBLK, MEM_NULL_DEVID); 
-        /*Block devices*/
-        do_mknod("/dev/zero", S_IFBLK, MEM_ZERO_DEVID); 
-        /*Byte devices*/
-        do_mknod("/dev/tty0", S_IFCHR, MKDEVID(2, 0)); 
+        int status1=do_mknod("/dev/null", S_IFCHR, MEM_NULL_DEVID); 
+	 dbg(DBG_INIT,"null:%d\n",status1);
+        int status2=do_mknod("/dev/zero", S_IFCHR, MEM_ZERO_DEVID); 
+	 dbg(DBG_INIT,"zero:%d\n",status2);
+        int status3=do_mknod("/dev/tty0", S_IFCHR, MKDEVID(2, 0)); 
+          dbg(DBG_INIT,"tty0:%d\n",status3);
+        }
 #endif
 
         /* Finally, enable interrupts (we want to make sure interrupts
@@ -329,8 +334,8 @@ initproc_run(int arg1, void *arg2)
        
 #ifdef __DRIVERS__
 	
-        /*kshell_add_command("Sunghan test", Sunghantest, "\n");
-	kshell_add_command("Faber Test",fabertest,"\n");
+        /*kshell_add_command("Sunghan test", Sunghantest, "\n");*/
+	/*kshell_add_command("Faber Test",fabertest,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");*/
 	/*kshell_add_command("vfstest_main", vfstest_main,"\n");*/
