@@ -26,9 +26,8 @@ int
 lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         /*NOT_YET_IMPLEMENTED("VFS: lookup");*/
-	dbg(DBG_INIT,"start of lookup %s,%d\n",name,len);
+	dbg(DBG_INIT,"LOOKUP START %s,%d\n",name,len);
 	
-        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP START\n");
         KASSERT(NULL != dir);
         dbg(DBG_INIT,"(GRADING2 2.a)  Dir is not null\n");
         KASSERT(NULL != name);
@@ -41,19 +40,18 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
             return -ENAMETOOLONG;
         }
 
-        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END\n");
         if(dir->vn_ops == NULL || dir->vn_ops->lookup == NULL)
         {
             /* The file system has no lookup implementation defined*/
             return -ENOTDIR;
         }
-        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END\n");
 
         /*TODO: How to detect . and .. case */
 
         /*returns with the vnode refcount on *result incremented*/
+        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END1\n");
         int status = dir->vn_ops->lookup(dir, name, len, result);
-       dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END3\n");
+       dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END2\n");
         return status;
 }
 
@@ -151,7 +149,6 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 
 
       int i=0,j=0,c=0;
-      /*char *new_path=(char*)malloc(sizeof(char)*1024);*/
       char new_path[1024];
       vnode_t *current_dir;
       int ret_val;
@@ -162,7 +159,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
   }
   else if(base==NULL)
   {
-     dbg(DBG_INIT," base=NULL ");
+     dbg(DBG_INIT," base=NULL %d\n", curproc->p_pid);
      current_dir=curproc->p_cwd;
   }
   else
@@ -196,14 +193,12 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
  
   *name=new_path;
   *namelen=c;
-  if(current_dir==NULL){
-   dbg(DBG_INIT,"DIRNAMEV END 1: \n");
-  }
   /*vref(current_dir);*/
   /*res_vnode=current_dir;*/
   dbg(DBG_INIT,"DIRNAMEV END 2: %d\n",current_dir->vn_vno);
   *res_vnode = vget(current_dir->vn_fs, current_dir->vn_vno);
   dbg(DBG_INIT,"DIRNAMEV END %d\n",current_dir->vn_vno);
+
   KASSERT(NULL != *res_vnode);
   dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
   return 0;
