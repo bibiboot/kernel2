@@ -57,7 +57,7 @@ do_read(int fd, void *buf, size_t nbytes)
           fput(fle);
           return -EISDIR;
       }
-      if(fle->f_mode!=FMODE_READ)
+      if((fle->f_mode&FMODE_READ)==0)
       {
           dbg(DBG_INIT,"file is not in read mode");
           fput(fle);
@@ -96,10 +96,10 @@ do_write(int fd, const void *buf, size_t nbytes)
           fput(fle);
           return -EISDIR;
       }
-      if(fle->f_mode!=FMODE_WRITE)
+      if((fle->f_mode&FMODE_WRITE) == 0)
       {
 
-          dbg(DBG_INIT,"file is not in read mode");
+          dbg(DBG_INIT,"file is not in write mode");
           fput(fle);
           return -EBADF;
       }
@@ -238,10 +238,13 @@ do_mknod(const char *path, int mode, unsigned devid)
         vnode_t *res_node,*result;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
+        
         int retval=dir_namev(path, &namelen, &name, NULL, &res_node);
         if(retval==-ENOTDIR)
                 return -ENOTDIR;
+                dbg(DBG_INIT,"MKNOD before lookup %s\n",name);
         retval= lookup(res_node, name, namelen, &result);
+                dbg(DBG_INIT,"MKNOD after lookup %d\n",retval);
         if(retval>0)
         {
              vput(result);
@@ -270,21 +273,29 @@ do_mkdir(const char *path)
 {
         /*NOT_YET_IMPLEMENTED("VFS: do_mkdir");*/
 	const char *name;
-        size_t namelen = 0;
-        vnode_t *res_node,*result;
+        size_t namelen;
+        vnode_t *res_node;
 
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path, &namelen,&name,NULL,&res_node);
+        dbg(DBG_INIT,"MKDIRxxxx before lookup %s\n",path);
+        int retval=dir_namev(path, &namelen, &name, NULL, &res_node);
+        dbg(DBG_INIT,"MKDIRxxxx after lookup\n");
+       /* dbg(DBG_INIT,"MKDIR after lookup %d,%f\n",retval,res_node->vn_vno); */
         if(retval==-ENOTDIR)
                 return -ENOTDIR;
 
-        retval=lookup(res_node,name,namelen,&result);
+        retval=lookup(res_node, name, namelen, &res_node);
         if(retval>0)
-        {       vput(result);
-                return -EEXIST;
+        {
+            dbg(DBG_INIT,"return value from look > 0\n");        
+            vput(res_node);
+            return -EEXIST;
         }
-        return res_node->vn_ops->mkdir(res_node,name,namelen);
+	 dbg(DBG_INIT,"return value from look <= 0\n");   
+	
+        int status= res_node->vn_ops->mkdir(res_node, name, namelen);
+        dbg(DBG_INIT,"end of mkdir %d\n",status); 
 }
 
 /* Use dir_namev() to find the vnode of the directory containing the dir to be
@@ -520,7 +531,8 @@ do_chdir(const char *path)
 int
 do_getdent(int fd, struct dirent *dirp)
 {
-   NOT_YET_IMPLEMENTED("VFS: do_getdent DONE");
+   /*NOT_YET_IMPLEMENTED("VFS: do_getdent DONE");*/
+   dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX getdent 1\n");
    int to_add;
    file_t *file_fd;
    
@@ -534,16 +546,13 @@ do_getdent(int fd, struct dirent *dirp)
       fput(file_fd);
       return -ENOTDIR;
    }
-   
    if(!file_fd->f_vnode->vn_ops->readdir){
       fput(file_fd);
       return 0;
    }
-   
    to_add = file_fd->f_vnode->vn_ops->readdir(file_fd->f_vnode,file_fd->f_pos,dirp);
    if(to_add>0)
       file_fd->f_pos = file_fd->f_pos + to_add;
-   
     fput(file_fd);
     return sizeof(*dirp);
 }
@@ -617,6 +626,7 @@ do_lseek(int fd, int offset, int whence)
 int do_stat(const char *path, struct stat *buf)
 {
   /*NOT_YET_IMPLEMENTED("VFS: do_stat DONE");*/
+     dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DOSTAT 1\n");
   int ret_val,ret_code;
   vnode_t *get_vnode;
 

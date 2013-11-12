@@ -29,8 +29,7 @@ get_empty_fd(proc_t *p)
                         return fd;
         }
 
-        dbg(DBG_ERROR | DBG_VFS, "ERROR: get_empty_fd: out of file descriptors "
-            "for pid %d\n", curproc->p_pid);
+   dbg(DBG_ERROR | DBG_VFS, "ERROR: get_empty_fd: out of file descriptors for pid %d\n", curproc->p_pid);
         return -EMFILE;
 }
 
@@ -73,6 +72,7 @@ get_empty_fd(proc_t *p)
 int
 do_open(const char *filename, int oflags)
 {
+        dbg(DBG_INIT,"YYYYYYYYYYYYYYYYYYYYYYYY called do_open\n");
         /*NOT_YET_IMPLEMENTED("VFS: do_open");*/
         if(strlen(filename) > NAME_LEN){
             return -ENAMETOOLONG;
@@ -138,20 +138,23 @@ do_open(const char *filename, int oflags)
 
         /*Call open_namev to get vnode of the file*/
         /*Result vnode come here*/
-        vnode_t **res_vnode=NULL;
+        vnode_t *res_vnode;
         /*parent vnode*/
-        vnode_t *base = NULL;
+        vnode_t *base;
 
-        int status = open_namev(filename, oflags, res_vnode, base);
-
+        int status = open_namev(filename, oflags, &res_vnode, NULL);
+	 dbg(DBG_INIT,"OPEN-after open_namev %d \n",status);
+        
         /*If ISDIR and oflag permissions are */
-         if(_S_TYPE((*res_vnode)->vn_mode)==S_IFDIR && 
+         if(_S_TYPE(res_vnode->vn_mode)==S_IFDIR && 
               ( perm != O_RDONLY) ){
+              dbg(DBG_INIT,"OPEN-afte open_namev inside permission-1\n");
            curproc->p_files[fd]=NULL;
+           dbg(DBG_INIT,"PEN-afte open_namev inside permission-2\n");
            fput(f);
            return -EISDIR; 
         }
-
+	dbg(DBG_INIT,"OPEN-after after open_namev \n");
         if(status == -ENOENT && oflags != O_CREAT){
             curproc->p_files[fd]=NULL;
             fput(f);
@@ -162,25 +165,26 @@ do_open(const char *filename, int oflags)
             fput(f);
             return status;
         }
-
+	
+	dbg(DBG_INIT,"OPEN(2)-after after open_namev \n");
 
         if((extra&1024) != 0){
             /*O_APPEND*/
            /*Take default seek*/ 
-           seek = (*res_vnode)->vn_len;
+           seek = res_vnode->vn_len;
         }
 
         /*Set file descriptor of current process*/
         /*fd of the current process will not be null anymore*/
-        curproc->p_files[fd]=f;
+       
 
         /*Fill in the file_t*/
         f->f_pos = seek;
-        f->f_refcount = (*res_vnode)->vn_refcount;
-        f->f_vnode = *res_vnode;
+        f->f_refcount = res_vnode->vn_refcount;
+        f->f_vnode = res_vnode;
         /*Set the mode of the file*/
         f->f_mode = final_mode;
-
+	 curproc->p_files[fd]=f;
         /*Return new fd*/
         return fd;
 }

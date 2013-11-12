@@ -26,9 +26,9 @@ int
 lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
 {
         /*NOT_YET_IMPLEMENTED("VFS: lookup");*/
-
+	dbg(DBG_INIT,"start of lookup %s,%d\n",name,len);
+	
         dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP START\n");
-        int name_len = 0;
         KASSERT(NULL != dir);
         dbg(DBG_INIT,"(GRADING2 2.a)  Dir is not null\n");
         KASSERT(NULL != name);
@@ -52,7 +52,8 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         /*TODO: How to detect . and .. case */
 
         /*returns with the vnode refcount on *result incremented*/
-        int status = dir->vn_ops->lookup(dir, name, name_len, result);
+        int status = dir->vn_ops->lookup(dir, name, len, result);
+       dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END3\n");
         return status;
 }
 
@@ -138,42 +139,52 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
           vnode_t *base,vnode_t **res_vnode)
 {
         /*NOT_YET_IMPLEMENTED("VFS: dir_namev");*/
-
-        KASSERT(NULL != pathname);
-        dbg(DBG_INIT,"(GRADING2 2.b)  pathname is not null\n");
+	KASSERT(NULL != pathname);
+	dbg(DBG_INIT,"DIR_NAMEV PATHNAME %s\n",pathname);
         KASSERT(NULL != namelen);
-        dbg(DBG_INIT,"(GRADING2 2.b)  namelen is not null\n");
+        dbg(DBG_INIT,"(GRADING2 2.b)  pathname is not null\n");
         KASSERT(NULL != name);
-        dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
+        dbg(DBG_INIT,"(GRADING2 2.b)  namelen is not null\n");
         KASSERT(NULL != res_vnode);
+        dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
+        
 
 
       int i=0,j=0,c=0;
       /*char *new_path=(char*)malloc(sizeof(char)*1024);*/
       char new_path[1024];
-  vnode_t *current_dir;
-  int ret_val;
+      vnode_t *current_dir;
+      int ret_val;
 
   if(pathname[0]=='/')
+  {
      current_dir=vfs_root_vn;
+  }
   else if(base==NULL)
+  {
+     dbg(DBG_INIT," base=NULL ");
      current_dir=curproc->p_cwd;
+  }
   else
+   {
+     dbg(DBG_INIT," cur-dir=base ");
      current_dir=base;
-     
-  for(i=0;i<=strlen(pathname);i++){
-
-    if((pathname[i]=='/') || (i == strlen(pathname))){
+   }
+  
+  for(i=0;i<(int)strlen(pathname);i++){
+    if(pathname[i]=='/'){
 	if(i==0)		
 	  continue;
 	else {
 	   new_path[c]='\0';
+	   dbg(DBG_INIT,"DIRNAMEV bvgfbfh lookup %s\n",new_path);
 	   ret_val=lookup(current_dir,new_path,c,&current_dir);
+	   dbg(DBG_INIT,"DIRNAMEV after lookup %s,%d,%d\n",new_path,ret_val,current_dir->vn_vno);
 	   c=0;
 	   if(ret_val < 0)
 		return ret_val;
 	   vput(current_dir);
-	   if((i+1) == strlen(pathname))
+	   if((i+1) == (int)strlen(pathname))
 		break;
 	}
      }
@@ -182,12 +193,19 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 	c++;
      }
   }
-
+ 
   *name=new_path;
   *namelen=c;
-  vref(current_dir);
-  dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
+  if(current_dir==NULL){
+   dbg(DBG_INIT,"DIRNAMEV END 1: \n");
+  }
+  /*vref(current_dir);*/
+  /*res_vnode=current_dir;*/
+  dbg(DBG_INIT,"DIRNAMEV END 2: %d\n",current_dir->vn_vno);
+  *res_vnode = vget(current_dir->vn_fs, current_dir->vn_vno);
+  dbg(DBG_INIT,"DIRNAMEV END %d\n",current_dir->vn_vno);
   KASSERT(NULL != *res_vnode);
+  dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
   return 0;
 }
 
@@ -204,17 +222,16 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 int
 open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
 {
-        /*TODO Cannot understand vget*/
-        NOT_YET_IMPLEMENTED("VFS: open_namev");
-        size_t *namelen = NULL;
-        const char **name = NULL;
-        vnode_t *final_vnode = NULL;
+        /*TODO Cannot understand vget
+        NOT_YET_IMPLEMENTED("VFS: open_namev");*/
+        size_t namelen;
+        const char *name;
         /* Status will return if the file is already created or not */
-        int status = dir_namev(pathname, namelen, name, base, res_vnode);
+        int status = dir_namev(pathname, &namelen, &name, base, res_vnode);
         if(status < 0){
             return status;
         }
-        status = lookup(*res_vnode, *name, *namelen, &final_vnode);
+        status = lookup(*res_vnode, name, namelen, res_vnode);
 
         if(status == -ENOENT){
             if(flag==O_CREAT){
@@ -223,8 +240,7 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/
-                status = (*res_vnode)->vn_ops->create(base, *name, *namelen, res_vnode); 
-               
+                status = (*res_vnode)->vn_ops->create(base, name, namelen, res_vnode); 
             }
         }
         return status;
