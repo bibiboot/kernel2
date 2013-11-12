@@ -155,6 +155,16 @@ kmain()
 		return 0;
 
 	}
+
+       int vfstestmain(kshell_t *kshell, int argc, char **argv)
+        {
+
+                KASSERT(kshell!=NULL);
+                vfstest_main(1, NULL);
+                return 0;
+
+        }
+
 #endif /* __DRIVERS__ */
 
 /**
@@ -339,7 +349,7 @@ initproc_run(int arg1, void *arg2)
 	/*kshell_add_command("Faber Test",fabertest,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");*/
-	/*kshell_add_command("vfstest_main", vfstest_main,"\n");*/
+	kshell_add_command("vfstest_main", vfstestmain,"\n");
         /*vfstest_main() (with argc=1 and argv=NULL)*/
         kshell_t *kshell = kshell_create(0);
         if (NULL == kshell) panic("init: Couldn't create kernel shell\n");
