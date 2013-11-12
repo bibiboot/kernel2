@@ -294,6 +294,7 @@ do_mkdir(const char *path)
         }
 	 dbg(DBG_INIT,"return value from look <= 0\n");   
 	
+	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD\n");   
         int status= res_node->vn_ops->mkdir(res_node, name, namelen);
         dbg(DBG_INIT,"end of mkdir %d\n",status); 
 }
@@ -372,17 +373,19 @@ int
 do_unlink(const char *path)
 {
         /*OT_YET_IMPLEMENTED("VFS: do_unlink");*/
-        const char **name = NULL;
+        dbg(DBG_INIT,"DO_UNLINK %s\n",path);
+        char *name;
         size_t namelen = 0;
         vnode_t *res_node,*result;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path, &namelen, name,NULL, &res_node);
+        int retval=dir_namev(path, &namelen, &name,NULL, &res_node);
+        dbg(DBG_INIT,"DO_UNLINK: Name to be unlinked %s\n", name);
         if(retval < 0){
             return retval;
         }
 
-        retval=lookup(res_node, *name,namelen, &result);
+        retval=lookup(res_node, name,namelen, &res_node);
         if(retval < 0){
             return retval;
         }
@@ -393,12 +396,12 @@ do_unlink(const char *path)
                 return -ENOENT;
         */
 
-        if(S_ISDIR(result->vn_mode))
+        if(S_ISDIR(res_node->vn_mode))
         {
-                vput(result);
+                vput(res_node);
                 return -EISDIR;
         }
-        return res_node->vn_ops->unlink(res_node, *name,namelen);
+        return res_node->vn_ops->unlink(res_node, name, namelen);
 }
 
 /* To link:
@@ -424,7 +427,7 @@ int
 do_link(const char *from, const char *to)
 {
         /* NOT_YET_IMPLEMENTED("VFS: do_link");*/
-        const char **name = NULL;
+        char *name ;
         size_t namelen;
         vnode_t *res_node_source, *res_node_dest,*result;
         if(strlen(from)>MAXPATHLEN)
@@ -432,14 +435,13 @@ do_link(const char *from, const char *to)
         if(strlen(to)>MAXPATHLEN)
                 return -ENAMETOOLONG;
 
-
         int retval=open_namev(from,0, &res_node_source,NULL);
         if(retval < 0){
             /*vput(res_node_source);*/
             return retval;
         }
 
-        retval=dir_namev(to, &namelen, name,NULL, &res_node_dest);
+        retval=dir_namev(to, &namelen, &name,NULL, &res_node_dest);
         if(retval < 0){
             /*vput(res_node_dest);
             vput(res_node_source);*/
@@ -452,12 +454,12 @@ do_link(const char *from, const char *to)
                 return -ENOENT;
         */
 
-        retval=lookup(res_node_dest,*name,namelen, &result);
+        retval=lookup(res_node_dest, name,namelen, &result);
         if(retval>0)
                { vput(result);
                  return -EEXIST;
                 }
-        retval=res_node_dest->vn_ops->link(res_node_dest,res_node_source,*name,namelen);
+        retval=res_node_dest->vn_ops->link(res_node_dest,res_node_source, name,namelen);
 
         vput(res_node_dest);
         vput(res_node_source);
@@ -551,9 +553,15 @@ do_getdent(int fd, struct dirent *dirp)
       return 0;
    }
    to_add = file_fd->f_vnode->vn_ops->readdir(file_fd->f_vnode,file_fd->f_pos,dirp);
+   dbg(DBG_INIT,"TO_ADD = %d\n", to_add);
+   if(to_add==0){
+       return 0;
+   }
    if(to_add>0)
       file_fd->f_pos = file_fd->f_pos + to_add;
     fput(file_fd);
+   dbg(DBG_INIT,"Size = %d\n", sizeof(*dirp));
+  
     return sizeof(*dirp);
 }
 
