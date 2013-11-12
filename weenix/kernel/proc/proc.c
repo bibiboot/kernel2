@@ -125,8 +125,19 @@ proc_t *new_process;
 	new_process->p_pagedir=pt_create_pagedir();
 
 	KASSERT(new_process->p_pagedir!=NULL);
-	
-	
+
+	int fd;	
+	for (fd = 0; fd < NFILES; fd++) {
+              new_process->p_files[fd]=NULL;
+        }
+        new_process->p_cwd=vfs_root_vn;
+        if (new_process->p_cwd)
+        {
+                vref(new_process->p_cwd);
+        }
+
+
+        
         return new_process;
 }
 /**
