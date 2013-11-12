@@ -230,8 +230,7 @@ idleproc_run(int arg1, void *arg2)
         /* Once you have VFS remember to set the current working directory
          * of the idle and init processes */
          curproc->p_cwd = vfs_root_vn;
-         proc_t* init_proc = proc_lookup(0);
-         init_proc->p_cwd = vfs_root_vn;
+         initthr->kt_proc->p_cwd = vfs_root_vn;
          vref(vfs_root_vn);
          vref(vfs_root_vn);
 
@@ -241,8 +240,10 @@ idleproc_run(int arg1, void *arg2)
         /*NOT_YET_IMPLEMENTED("VFS: idleproc_run");*/
         /*TODO Dont know When VFS will be formed*/
 
-        if(do_mkdir("/dev") >= 0)
+        if(do_mkdir("/dev") >=  0)
         {
+       
+        do_mkdir("/dev");
         /*Block devices*/
         int status1=do_mknod("/dev/null", S_IFCHR, MEM_NULL_DEVID); 
 	 dbg(DBG_INIT,"null:%d\n",status1);
