@@ -671,15 +671,18 @@ do_lseek(int fd, int offset, int whence)
 int do_stat(const char *path, struct stat *buf)
 {
   /*NOT_YET_IMPLEMENTED("VFS: do_stat DONE");*/
-     dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DOSTAT 1\n");
+  dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DOSTAT 1\n");
   int ret_val,ret_code;
   vnode_t *get_vnode;
-
+   if(strlen(path)<1)
+   {
+      return -EINVAL;
+   }
   ret_val=open_namev(path, O_RDONLY, &get_vnode, NULL);
 
   KASSERT(get_vnode->vn_ops->stat);
   dbg(DBG_INIT,"(GRADING2 3.f) vnode exists\n");
-
+  
   if(ret_val < 0){
       return ret_val;
   }
