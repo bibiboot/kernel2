@@ -41,22 +41,30 @@
 int
 do_read(int fd, void *buf, size_t nbytes)
 {
+dbg(DBG_INIT,"doreadstart fd:%d\n",fd);
       /*NOT_YET_IMPLEMENTED("VFS: do_read");*/
       file_t *fle;
-
+      
+      if(fd < 0 || fd >= NFILES)
+      {  
+         return -EBADF;
+      }
+        
       fle=fget(fd);
       if(fle==NULL)
       {
+dbg(DBG_INIT,"doread1a %d\n",fd);
           /*DBG(DBG_INIT,"file not found");*/
           return -EBADF;
       }
-
-      if(_S_TYPE(fle->f_vnode->vn_mode)==S_IFDIR)
-      {
-          dbg(DBG_INIT,"file is a directory");
-          fput(fle);
-          return -EISDIR;
-      }
+dbg(DBG_INIT,"doread2 mode:\n");
+      if(S_ISDIR(fle->f_vnode->vn_mode))
+        {        dbg(DBG_INIT,"doread2a\n");
+                fput(fle);
+                 dbg(DBG_INIT,"doread2b\n");
+                 return -EISDIR;
+        } 
+dbg(DBG_INIT,"\n\ndoread3 fmode:%d\n",fle->f_mode);
       if((fle->f_mode&FMODE_READ)==0)
       {
           dbg(DBG_INIT,"file is not in read mode");
@@ -66,6 +74,8 @@ do_read(int fd, void *buf, size_t nbytes)
       int amt_read = fle->f_vnode->vn_ops->read(fle->f_vnode,fle->f_pos, buf, nbytes);
       fle->f_pos=fle->f_pos + amt_read;
       fput(fle);
+dbg(DBG_INIT,"doread6\n");
+dbg(DBG_INIT,"doreadend readbytes:%d\n",amt_read);
       return amt_read;
 }
 
@@ -80,9 +90,14 @@ do_read(int fd, void *buf, size_t nbytes)
 int
 do_write(int fd, const void *buf, size_t nbytes)
 {
+      dbg(DBG_INIT,"\nDOWRITE %s\n",buf);
       /*NOT_YET_IMPLEMENTED("VFS: do_write");*/
       file_t *fle;
-
+       if(fd < 0 || fd >= NFILES)
+      {  
+         return -EBADF;
+      }
+      
       fle=fget(fd);
       if(fle==NULL)
       {
@@ -98,19 +113,24 @@ do_write(int fd, const void *buf, size_t nbytes)
       }
       if((fle->f_mode&FMODE_WRITE) == 0)
       {
-
           dbg(DBG_INIT,"file is not in write mode");
           fput(fle);
           return -EBADF;
       }
 
-      if(fle->f_mode==FMODE_APPEND)
+      if((fle->f_mode&FMODE_APPEND!=0) || ((fle->f_mode)&(FMODE_READ|FMODE_WRITE) !=0))
       {
-         do_lseek(fd, 0, SEEK_END);
+      dbg(DBG_INIT,"\n\ngoeslseek\n");
+      /* fle->f_pos=do_lseek(fd, 0, SEEK_END); */
+      if(fle->f_pos < fle->f_vnode->vn_len)
+      {
+        fle->f_pos=fle->f_vnode->vn_len;
+      }
       }
 
       int amt_write = fle->f_vnode->vn_ops->write(fle->f_vnode,fle->f_pos,buf,nbytes);
       fle->f_pos=fle->f_pos + amt_write;
+      dbg(DBG_INIT,"\nFILEPOS2 %d\n",fle->f_pos);
       fput(fle);
       if (amt_write){
           KASSERT((S_ISCHR(fle->f_vnode->vn_mode)) ||
@@ -131,6 +151,10 @@ int
 do_close(int fd)
 {
        /*NOT_YET_IMPLEMENTED("VFS: do_close");*/
+        if(fd < 0 || fd >= NFILES)
+      {  
+         return -EBADF;
+      }
        file_t *fil=fget(fd);
         if(fil==NULL)
                 return -EBADF;
@@ -159,8 +183,12 @@ int
 do_dup(int fd)
 {
       /*NOT_YET_IMPLEMENTED("VFS: do_dup");*/
+      if(fd < 0 || fd >= NFILES)
+      {  
+       return -EBADF;
+      }
       file_t *orig_fil=fget(fd);
-      if(fd==NULL){
+      if(orig_fil==NULL){
         return -EBADF;
       }
       
@@ -187,14 +215,17 @@ int
 do_dup2(int ofd, int nfd)
 {
         /*NOT_YET_IMPLEMENTED("VFS: do_dup2");*/
+        if(nfd<0 || nfd>NFILES || ofd<0 || ofd>NFILES)
+        {
+            return -EBADF;
+        }
+        
         file_t *fil=fget(ofd);
         if(fil==NULL)
-                return -EBADF;
-        if(nfd>NFILES)
         {
-                fput(fil);
-                return -EBADF;
+            return -EBADF;
         }
+        
         if(curproc->p_files[nfd]!=NULL && curproc->p_files[nfd]!=fil)
                 do_close(nfd);
         curproc->p_files[nfd]=fil;
@@ -573,6 +604,10 @@ do_getdent(int fd, struct dirent *dirp)
    /*NOT_YET_IMPLEMENTED("VFS: do_getdent DONE");*/
    dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX getdent 1\n");
    int to_add;
+   if(fd < 0 || fd >= NFILES)
+   {  
+       return -EBADF;
+   }
    file_t *file_fd;
    
    file_fd=fget(fd);
@@ -617,6 +652,10 @@ do_lseek(int fd, int offset, int whence)
 {
         /*NOT_YET_IMPLEMENTED("VFS: do_lseek DONE");*/
         /* Get the file */
+        if(fd < 0 || fd >= NFILES)
+        {  
+           return -EBADF;
+        }
         file_t *fle;
         int fpos;
         fle=fget(fd);
@@ -636,7 +675,6 @@ do_lseek(int fd, int offset, int whence)
         else if(whence == SEEK_CUR)
         {
             fpos=fle->f_pos+offset;
-
         }
         else if(whence == SEEK_END)
         {
@@ -653,8 +691,9 @@ do_lseek(int fd, int offset, int whence)
             return -EINVAL;
         }
         fle->f_pos = fpos;
+        dbg(DBG_INIT,"\n\nLSEEKVALUE %d\n",fle->f_pos);
         fput(fle);
-        return 0; 
+        return fpos; 
 }
 
 /*

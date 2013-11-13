@@ -92,8 +92,8 @@ do_open(const char *filename, int oflags)
         }
         
         int perm = oflags&3;
-        int extra = oflags&(255<<2);
-        int final_mode;
+        int extra = oflags&2044;
+        int final_mode=0;
         int seek;
         /*perm can be
          O_RDONLY        0
@@ -110,6 +110,7 @@ do_open(const char *filename, int oflags)
 
          2^11-1
         */
+        
         if(perm == (O_WRONLY | O_RDWR)){
             /*Error case for flags*/
             fput(f);
@@ -120,7 +121,11 @@ do_open(const char *filename, int oflags)
             final_mode = FMODE_READ;
             seek = 0;
         }
-        else if(perm == 1 || perm == 2 || perm == 3){
+        else if(perm == 1){
+            final_mode = FMODE_WRITE;
+            seek = 0;
+        }
+        else if(perm == 2 || perm == 3){
             final_mode = FMODE_READ | FMODE_WRITE; 
             seek = 0;
         }
@@ -130,11 +135,16 @@ do_open(const char *filename, int oflags)
            oflags = O_CREAT;
         }
 
-        if((extra&512) != 0){
+        if((extra&512) != 0 ){
           /*0_TRUNC*/
           /*TODO*/
         }
-
+        
+	if((extra&1024) != 0){
+            /*O_APPEND*/
+           /*Take default seek*/ 
+           final_mode=final_mode|FMODE_APPEND;
+        }
 
         /*Call open_namev to get vnode of the file*/
         /*Result vnode come here*/
@@ -144,16 +154,8 @@ do_open(const char *filename, int oflags)
 
         int status = open_namev(filename, oflags, &res_vnode, NULL);
 	 dbg(DBG_INIT,"OPEN-after open_namev %d \n",status);
-        
-        /*If ISDIR and oflag permissions are */
-         if(_S_TYPE(res_vnode->vn_mode)==S_IFDIR && 
-              ( perm != O_RDONLY) ){
-              dbg(DBG_INIT,"OPEN-afte open_namev inside permission-1\n");
-           curproc->p_files[fd]=NULL;
-           dbg(DBG_INIT,"PEN-afte open_namev inside permission-2\n");
-           fput(f);
-           return -EISDIR; 
-        }
+
+       
 	dbg(DBG_INIT,"OPEN-after after open_namev \n");
         if(status == -ENOENT && oflags != O_CREAT){
             curproc->p_files[fd]=NULL;
@@ -167,8 +169,18 @@ do_open(const char *filename, int oflags)
         }
 	
 	dbg(DBG_INIT,"OPEN(2)-after after open_namev \n");
-
-        if((extra&1024) != 0){
+	
+	 /*If ISDIR and oflag permissions are */
+         if(_S_TYPE(res_vnode->vn_mode)==S_IFDIR && 
+              ( perm != O_RDONLY) ){
+              dbg(DBG_INIT,"OPEN-afte open_namev inside permission-1\n");
+           curproc->p_files[fd]=NULL;
+           dbg(DBG_INIT,"PEN-afte open_namev inside permission-2\n");
+           fput(f);
+           return -EISDIR; 
+        }
+        dbg(DBG_INIT,"\n\n\n\n\nopeninsideappend %d,%d\n",oflags,extra);
+        if((extra&1024) != 0 && perm!=2){
             /*O_APPEND*/
            /*Take default seek*/ 
            seek = res_vnode->vn_len;

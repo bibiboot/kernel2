@@ -36,6 +36,11 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         dbg(DBG_INIT,"(GRADING2 2.a)  result pointer is not null\n");
 
         /*Check input*/
+        if(len==0){
+        *result=vget(dir->vn_fs,dir->vn_vno);
+        return 0;
+        }
+        
         if(len > NAME_LEN){
             return -ENAMETOOLONG;
         }
@@ -52,7 +57,7 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         /*returns with the vnode refcount on *result incremented*/
         dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END1\n");
         int status = dir->vn_ops->lookup(dir, name, len, result);
-       dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END2\n");
+        dbg(DBG_INIT,"(GRADING2 2.a)  LOOKUP END2\n");
         return status;
 }
 
@@ -218,6 +223,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 int
 open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
 {
+dbg(DBG_INIT,"OPEN_NAMEV START %s\n",pathname);
         /*TODO Cannot understand vget
         NOT_YET_IMPLEMENTED("VFS: open_namev");*/
         size_t namelen;
@@ -229,7 +235,7 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
         }
 dbg(DBG_INIT,"OPEN_NAMEV before lookup %s\n",name);
         status = lookup(*res_vnode, name, namelen, res_vnode);
-dbg(DBG_INIT,"OPEN_NAMVE after lookup\n");
+dbg(DBG_INIT,"OPEN_NAMVE after lookup-status:%d\n",status);
         if(status == -ENOENT){
         dbg(DBG_INIT,"in status==ENOENT\n");
             if(flag==O_CREAT){
@@ -242,6 +248,7 @@ dbg(DBG_INIT,"OPEN_NAMVE after lookup\n");
                 status = (*res_vnode)->vn_ops->create(*res_vnode, name, namelen, res_vnode); 
             }
         }
+        dbg(DBG_INIT,"OPEN_NAMEV END-status:%d\n",status);
         return status;
 }
 
