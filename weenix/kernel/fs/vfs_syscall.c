@@ -272,26 +272,42 @@ int
 do_mkdir(const char *path)
 {
         /*NOT_YET_IMPLEMENTED("VFS: do_mkdir");*/
+	dbg(DBG_INIT,"MKDIR VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV %s,%d\n",path,(int)strlen(path));
 	const char *name;
         size_t namelen;
         vnode_t *res_node;
 
-        if(strlen(path)>MAXPATHLEN)
+        if((int)strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        dbg(DBG_INIT,"MKDIRxxxx before lookup %s\n",path);
+        
         int retval=dir_namev(path, &namelen, &name, NULL, &res_node);
-        dbg(DBG_INIT,"MKDIRxxxx after lookup\n");
+        if(retval==-ENOENT)
+        {
+            return -ENOENT;
+        }
+        dbg(DBG_INIT,"MKDIRxxxx after lookup %d\n",namelen);
        /* dbg(DBG_INIT,"MKDIR after lookup %d,%f\n",retval,res_node->vn_vno); */
         if(retval==-ENOTDIR)
                 return -ENOTDIR;
 
         retval=lookup(res_node, name, namelen, &res_node);
-        if(retval>0)
+        if(retval>=0)
         {
             dbg(DBG_INIT,"return value from look > 0\n");        
             vput(res_node);
             return -EEXIST;
         }
+        if(retval==-ENAMETOOLONG)
+        {
+            vput(res_node);
+            return -ENAMETOOLONG;
+        }
+        if(retval==-ENOTDIR)
+        {
+            vput(res_node);
+            return -ENOTDIR;
+        }
+
 	dbg(DBG_INIT,"return value from look <= 0\n");   
 	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD %d,%s,%d\n",res_node->vn_vno,name,namelen);
 	
@@ -321,7 +337,8 @@ do_mkdir(const char *path)
  */
 int do_rmdir(const char *path)
 {
-   NOT_YET_IMPLEMENTED("VFS: do_rmdir");
+/*   NOT_YET_IMPLEMENTED("VFS: do_rmdir");*/
+   dbg(DBG_INIT,"RMDIRSTART %s,%d\n",path,(int)strlen(path));
    int len1=0,len2=0,len3=0;
    size_t path_len;
    const char *path_name;
@@ -335,20 +352,31 @@ int do_rmdir(const char *path)
 
    ret_val=dir_namev(path, &path_len, &path_name, NULL, &path_vnode);
 
-   if(ret_val < 0){
+    if(ret_val < 0){
        return ret_val;
    }
+   if(!S_ISDIR(path_vnode->vn_mode))
+   {
+   return -ENOTDIR;
+   }
+   dbg(DBG_INIT,"RET_VAL FROM DO_RMDIR CCCCCCCCCCCCCCCCCCCCCCCCCC %d\n",ret_val);
+   
+  
    
    len1=strlen(path_name);
    len2=len1-1;
    len3=len1-2;
-
+   dbg(DBG_INIT,"printpath x%cx%cx\n",path_name[len3],path_name[len2]);
    if(path_name[len2]=='.')
    {
-	if(path[len3]=='.')
+	if(path_name[len3]=='.')
+	{
 	   return -ENOTEMPTY;
+	}
 	else
+	{
 	   return -EINVAL;
+	}
    }
    KASSERT(NULL != path_vnode->vn_ops->rmdir);
    dbg(DBG_INIT,"(GRADING2 3.d)  Directory's vnode is not null\n");
@@ -378,16 +406,17 @@ do_unlink(const char *path)
         dbg(DBG_INIT,"DO_UNLINK %s\n",path);
         const char *name;
         size_t namelen = 0;
-        vnode_t *res_node,*result;
+        vnode_t *res_node,*root_dir;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
-        int retval=dir_namev(path, &namelen, &name,NULL, &res_node);
+        int retval=dir_namev(path, &namelen, &name,NULL, &root_dir);
         dbg(DBG_INIT,"DO_UNLINK: Name to be unlinked %s\n", name);
         if(retval < 0){
             return retval;
         }
 
-        retval=lookup(res_node, name,namelen, &res_node);
+        retval=lookup(root_dir, name,namelen, &res_node);
+        dbg(DBG_INIT,"unlinkafterlookup %d\n", retval);
         if(retval < 0){
             return retval;
         }
@@ -403,7 +432,8 @@ do_unlink(const char *path)
                 vput(res_node);
                 return -EISDIR;
         }
-        return res_node->vn_ops->unlink(res_node, name, namelen);
+        dbg(DBG_INIT,"unlinkend\n");
+        return root_dir->vn_ops->unlink(root_dir, name, namelen);
 }
 
 /* To link:

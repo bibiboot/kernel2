@@ -39,8 +39,9 @@ lookup(vnode_t *dir, const char *name, size_t len, vnode_t **result)
         if(len > NAME_LEN){
             return -ENAMETOOLONG;
         }
-
-        if(dir->vn_ops == NULL || dir->vn_ops->lookup == NULL)
+        
+        dbg(DBG_INIT,"lookupisdir %d,%s\n",S_ISDIR(dir->vn_mode),name);
+        if(dir->vn_ops->lookup == NULL)
         {
             /* The file system has no lookup implementation defined*/
             return -ENOTDIR;
@@ -205,8 +206,6 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
   dbg(DBG_INIT,"(GRADING2 2.b)  res_vnode is not null\n");
   return 0;
 }
-
-
 
 /* This returns in res_vnode the vnode requested by the other parameters.
  * It makes use of dir_namev and lookup to find the specified vnode (if it
