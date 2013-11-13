@@ -51,9 +51,12 @@ static void      *idleproc_run(int arg1, void *arg2);
 static kthread_t *initproc_create(void);
 static void      *initproc_run(int arg1, void *arg2);
 static void       hard_shutdown(void);
-
+extern void *vfstest_main(int, void*);
+extern void *testproc();
 static context_t bootstrap_context;
-
+extern int Sunghantest(kshell_t *k,int arg1, char **);
+extern int sunghan_test();
+extern int sunghan_deadlock_test();
 static int gdb_wait = GDBWAIT;
 /**
  * This is the first real C function ever called. It performs a lot of

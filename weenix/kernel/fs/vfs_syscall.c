@@ -90,7 +90,6 @@ dbg(DBG_INIT,"doreadend readbytes:%d\n",amt_read);
 int
 do_write(int fd, const void *buf, size_t nbytes)
 {
-      dbg(DBG_INIT,"\nDOWRITE %s\n",buf);
       /*NOT_YET_IMPLEMENTED("VFS: do_write");*/
       file_t *fle;
        if(fd < 0 || fd >= NFILES)
@@ -118,7 +117,7 @@ do_write(int fd, const void *buf, size_t nbytes)
           return -EBADF;
       }
 
-      if((fle->f_mode&FMODE_APPEND!=0) || ((fle->f_mode)&(FMODE_READ|FMODE_WRITE) !=0))
+      if(((fle->f_mode&FMODE_APPEND)!=0) || (((fle->f_mode)&(FMODE_READ|FMODE_WRITE)) !=0))
       {
       dbg(DBG_INIT,"\n\ngoeslseek\n");
       /* fle->f_pos=do_lseek(fd, 0, SEEK_END); */
@@ -346,6 +345,7 @@ do_mkdir(const char *path)
 	dbg(DBG_INIT,"The vnode has an implementation of mkdir\n");
         int status= res_node->vn_ops->mkdir(res_node, name, namelen);
         dbg(DBG_INIT,"end of mkdir %d\n",status); 
+        return status;
 }
 
 /* Use dir_namev() to find the vnode of the directory containing the dir to be
