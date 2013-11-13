@@ -293,7 +293,10 @@ do_mkdir(const char *path)
             return -EEXIST;
         }
 	dbg(DBG_INIT,"return value from look <= 0\n");   
-	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD %d,%s,%d\n",res_node->vn_vno,name,namelen);   
+	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD %d,%s,%d\n",res_node->vn_vno,name,namelen);
+	
+	KASSERT(NULL != res_node->vn_ops->mkdir);   
+	dbg(DBG_INIT,"The vnode has an implementation of mkdir\n");
         int status= res_node->vn_ops->mkdir(res_node, name, namelen);
         dbg(DBG_INIT,"end of mkdir %d\n",status); 
 }
@@ -509,6 +512,11 @@ do_chdir(const char *path)
                 return -ENOTDIR;
         if(retval==-ENOENT)
                 return -ENOENT;
+        if(!S_ISDIR(res_node->vn_mode))
+        {        
+                vput(res_node);
+                return -ENOTDIR;
+        }
         vput(curproc->p_cwd);
         curproc->p_cwd=res_node;
         return 0;

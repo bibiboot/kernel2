@@ -136,6 +136,7 @@ int
 dir_namev(const char *pathname, size_t *namelen, const char **name, 
           vnode_t *base,vnode_t **res_vnode)
 {
+
         /*NOT_YET_IMPLEMENTED("VFS: dir_namev");*/
 	KASSERT(NULL != pathname);
 	dbg(DBG_INIT,"DIR_NAMEV PATHNAME %s\n",pathname);
@@ -147,7 +148,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
         dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
 
       int i=0,j=0,c=0;
-      char new_path[1024];
+      char new_path[5000];
       vnode_t *current_dir;
       int ret_val;
 
@@ -173,7 +174,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 	else {
 	   new_path[c]='\0';
 	   dbg(DBG_INIT,"DIRNAMEV bvgfbfh lookup %s\n",new_path);
-	   ret_val=lookup(current_dir,new_path,c,&current_dir);
+	   ret_val=lookup(current_dir, new_path, c, &current_dir);
 	   dbg(DBG_INIT,"DIRNAMEV after lookup %s,%d,%d\n",new_path,ret_val,current_dir->vn_vno);
 	   c=0;
 	   if(ret_val < 0)
@@ -189,7 +190,10 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
      }
   }
   new_path[c]='\0';
+    dbg(DBG_INIT,"FFFFFFFFFFFFFFFFFFFFF-1 DIRNAMEV after endstring: %s\n",new_path);
   *name=new_path;
+  /*strcpy(*name, new_path);*/
+    dbg(DBG_INIT,"FFFFFFFFFFFFFFFFFFFFFf DIRNAMEV after endstring: %s\n",*name);
   *namelen=c;
   /*vref(current_dir);*/
   /*res_vnode=current_dir;*/
@@ -236,7 +240,7 @@ dbg(DBG_INIT,"OPEN_NAMVE after lookup\n");
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/
-                status = (*res_vnode)->vn_ops->create((*res_vnode), name, namelen, res_vnode); 
+                status = (*res_vnode)->vn_ops->create(*res_vnode, name, namelen, res_vnode); 
             }
         }
         return status;
