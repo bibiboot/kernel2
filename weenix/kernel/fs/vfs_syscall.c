@@ -292,9 +292,8 @@ do_mkdir(const char *path)
             vput(res_node);
             return -EEXIST;
         }
-	 dbg(DBG_INIT,"return value from look <= 0\n");   
-	
-	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD\n");   
+	dbg(DBG_INIT,"return value from look <= 0\n");   
+	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD %d,%s,%d\n",res_node->vn_vno,name,namelen);   
         int status= res_node->vn_ops->mkdir(res_node, name, namelen);
         dbg(DBG_INIT,"end of mkdir %d\n",status); 
 }
@@ -374,7 +373,7 @@ do_unlink(const char *path)
 {
         /*OT_YET_IMPLEMENTED("VFS: do_unlink");*/
         dbg(DBG_INIT,"DO_UNLINK %s\n",path);
-        char *name;
+        const char *name;
         size_t namelen = 0;
         vnode_t *res_node,*result;
         if(strlen(path)>MAXPATHLEN)
@@ -427,7 +426,7 @@ int
 do_link(const char *from, const char *to)
 {
         /* NOT_YET_IMPLEMENTED("VFS: do_link");*/
-        char *name ;
+        const char *name ;
         size_t namelen;
         vnode_t *res_node_source, *res_node_dest,*result;
         if(strlen(from)>MAXPATHLEN)

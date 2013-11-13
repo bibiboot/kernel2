@@ -349,7 +349,7 @@ initproc_run(int arg1, void *arg2)
 	/*kshell_add_command("Faber Test",fabertest,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");*/
-	kshell_add_command("vfstest_main", vfstestmain,"\n");
+	kshell_add_command("vv", vfstestmain,"\n");
         /*vfstest_main() (with argc=1 and argv=NULL)*/
         kshell_t *kshell = kshell_create(0);
         if (NULL == kshell) panic("init: Couldn't create kernel shell\n");

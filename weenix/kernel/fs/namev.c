@@ -145,8 +145,6 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
         dbg(DBG_INIT,"(GRADING2 2.b)  namelen is not null\n");
         KASSERT(NULL != res_vnode);
         dbg(DBG_INIT,"(GRADING2 2.b)  name is not null\n");
-        
-
 
       int i=0,j=0,c=0;
       char new_path[1024];
@@ -190,7 +188,7 @@ dir_namev(const char *pathname, size_t *namelen, const char **name,
 	c++;
      }
   }
- 
+  new_path[c]='\0';
   *name=new_path;
   *namelen=c;
   /*vref(current_dir);*/
@@ -226,16 +224,19 @@ open_namev(const char *pathname, int flag, vnode_t **res_vnode, vnode_t *base)
         if(status < 0){
             return status;
         }
+dbg(DBG_INIT,"OPEN_NAMEV before lookup %s\n",name);
         status = lookup(*res_vnode, name, namelen, res_vnode);
-
+dbg(DBG_INIT,"OPEN_NAMVE after lookup\n");
         if(status == -ENOENT){
+        dbg(DBG_INIT,"in status==ENOENT\n");
             if(flag==O_CREAT){
-                KASSERT(NULL != base->vn_ops->create);
+            dbg(DBG_INIT,"in flag==O_CREAT\n");
+                KASSERT(NULL != (*res_vnode)->vn_ops->create);
                 dbg(DBG_INIT,"(GRADING2 2.c) The callee of create has implementation\n");
                 /*If the file do not exist then create it */
                 /*Create vnode from vnode_ops function*/
                 /*Create function return status of the operation*/
-                status = (*res_vnode)->vn_ops->create(base, name, namelen, res_vnode); 
+                status = (*res_vnode)->vn_ops->create((*res_vnode), name, namelen, res_vnode); 
             }
         }
         return status;
