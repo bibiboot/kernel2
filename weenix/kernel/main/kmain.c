@@ -255,15 +255,15 @@ idleproc_run(int arg1, void *arg2)
 
         if(do_mkdir("/dev") >=  0)
         {
-       
-        do_mkdir("/dev");
+        dbg(DBG_PRINT,"(GRADING2C) Creating null, zero and tty0\n");
+        /*do_mkdir("/dev");*/
         /*Block devices*/
         int status1=do_mknod("/dev/null", S_IFCHR, MEM_NULL_DEVID); 
-	 dbg(DBG_INIT,"null:%d\n",status1);
+	
         int status2=do_mknod("/dev/zero", S_IFCHR, MEM_ZERO_DEVID); 
-	 dbg(DBG_INIT,"zero:%d\n",status2);
+	 
         int status3=do_mknod("/dev/tty0", S_IFCHR, MKDEVID(2, 0)); 
-          dbg(DBG_INIT,"tty0:%d\n",status3);
+          
         }
 #endif
 
@@ -348,12 +348,11 @@ initproc_run(int arg1, void *arg2)
        
 #ifdef __DRIVERS__
 	
-        /*kshell_add_command("Sunghan test", Sunghantest, "\n");*/
-	/*kshell_add_command("Faber Test",fabertest,"\n");
+        kshell_add_command("Sunghan test", Sunghantest, "\n");
+	kshell_add_command("Faber Test",fabertest,"\n");
 	kshell_add_command("deadlock test",Sunghandeadlock,"\n");
-	kshell_add_command("deadlock test",Sunghandeadlock,"\n");*/
 	kshell_add_command("vfstest_main", vfstestmain,"\n");
-        /*vfstest_main() (with argc=1 and argv=NULL)*/
+
         kshell_t *kshell = kshell_create(0);
         if (NULL == kshell) panic("init: Couldn't create kernel shell\n");
         while(kshell_execute_next(kshell));

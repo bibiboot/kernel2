@@ -41,7 +41,6 @@
 int
 do_read(int fd, void *buf, size_t nbytes)
 {
-dbg(DBG_INIT,"doreadstart fd:%d\n",fd);
       /*NOT_YET_IMPLEMENTED("VFS: do_read");*/
       file_t *fle;
       
@@ -53,29 +52,25 @@ dbg(DBG_INIT,"doreadstart fd:%d\n",fd);
       fle=fget(fd);
       if(fle==NULL)
       {
-dbg(DBG_INIT,"doread1a %d\n",fd);
+	  dbg(DBG_PRINT,"(GRADING2C) Bad File Descriptor\n");
           /*DBG(DBG_INIT,"file not found");*/
           return -EBADF;
       }
-dbg(DBG_INIT,"doread2 mode:\n");
       if(S_ISDIR(fle->f_vnode->vn_mode))
-        {        dbg(DBG_INIT,"doread2a\n");
-                fput(fle);
-                 dbg(DBG_INIT,"doread2b\n");
+        {        
+                 fput(fle);
+                 dbg(DBG_PRINT,"(GRADING2C) Reading a directory\n\n");
                  return -EISDIR;
         } 
-dbg(DBG_INIT,"\n\ndoread3 fmode:%d\n",fle->f_mode);
       if((fle->f_mode&FMODE_READ)==0)
       {
-          dbg(DBG_INIT,"file is not in read mode");
+          dbg(DBG_PRINT,"(GRADING2C) file is not in read mode\n");
           fput(fle);
           return -EBADF;
       }
       int amt_read = fle->f_vnode->vn_ops->read(fle->f_vnode,fle->f_pos, buf, nbytes);
       fle->f_pos=fle->f_pos + amt_read;
       fput(fle);
-dbg(DBG_INIT,"doread6\n");
-dbg(DBG_INIT,"doreadend readbytes:%d\n",amt_read);
       return amt_read;
 }
 
@@ -100,27 +95,25 @@ do_write(int fd, const void *buf, size_t nbytes)
       fle=fget(fd);
       if(fle==NULL)
       {
-          /*DBG(DBG_INIT,"file not found");*/
+          dbg(DBG_PRINT,"(GRADING2C) file not found\n");
           return -EBADF;
       }
 
       if(_S_TYPE(fle->f_vnode->vn_mode)==S_IFDIR)
       {
-          dbg(DBG_INIT,"file is a directory");
+          dbg(DBG_PRINT,"(GRADING2C) file is a directory\n");
           fput(fle);
           return -EISDIR;
       }
       if((fle->f_mode&FMODE_WRITE) == 0)
       {
-          dbg(DBG_INIT,"file is not in write mode");
+          dbg(DBG_PRINT,"(GRADING2C) file is not in write mode\n");
           fput(fle);
           return -EBADF;
       }
 
       if(((fle->f_mode&FMODE_APPEND)!=0) || (((fle->f_mode)&(FMODE_READ|FMODE_WRITE)) !=0))
       {
-      dbg(DBG_INIT,"\n\ngoeslseek\n");
-      /* fle->f_pos=do_lseek(fd, 0, SEEK_END); */
       if(fle->f_pos < fle->f_vnode->vn_len)
       {
         fle->f_pos=fle->f_vnode->vn_len;
@@ -129,12 +122,12 @@ do_write(int fd, const void *buf, size_t nbytes)
 
       int amt_write = fle->f_vnode->vn_ops->write(fle->f_vnode,fle->f_pos,buf,nbytes);
       fle->f_pos=fle->f_pos + amt_write;
-      dbg(DBG_INIT,"\nFILEPOS2 %d\n",fle->f_pos);
       fput(fle);
-      if (amt_write){
+      if (amt_write>=0){
           KASSERT((S_ISCHR(fle->f_vnode->vn_mode)) ||
                   (S_ISBLK(fle->f_vnode->vn_mode)) ||
                   ((S_ISREG(fle->f_vnode->vn_mode)) && (fle->f_pos <= fle->f_vnode->vn_len)));
+      dbg(DBG_PRINT,"(GRADING2A 3.a) File is of type character or block and File-Position does not exceed the current file size\n");
       }
       return amt_write;
 }
@@ -272,15 +265,14 @@ do_mknod(const char *path, int mode, unsigned devid)
         int retval=dir_namev(path, &namelen, &name, NULL, &res_node);
         if(retval==-ENOTDIR)
                 return -ENOTDIR;
-                dbg(DBG_INIT,"MKNOD before lookup %s\n",name);
         retval= lookup(res_node, name, namelen, &result);
-                dbg(DBG_INIT,"MKNOD after lookup %d\n",retval);
         if(retval>0)
         {
              vput(result);
              return -EEXIST;
         }
-        /*if(S_IFBLK(res_node->vn_mode)|| S_IFCHR(res_node->vn_mode))*/
+        KASSERT(NULL != res_node->vn_ops->mknod);
+        dbg(DBG_PRINT,"(GRADING2A 3.b) Vnode has an implementation of mknod\n");
         return res_node->vn_ops->mknod(res_node, name, namelen, mode, devid);
 }
 
@@ -302,7 +294,6 @@ int
 do_mkdir(const char *path)
 {
         /*NOT_YET_IMPLEMENTED("VFS: do_mkdir");*/
-	dbg(DBG_INIT,"MKDIR VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV %s,%d\n",path,(int)strlen(path));
 	const char *name;
         size_t namelen;
         vnode_t *res_node;
@@ -315,16 +306,15 @@ do_mkdir(const char *path)
         {
             return -ENOENT;
         }
-        dbg(DBG_INIT,"MKDIRxxxx after lookup %d\n",namelen);
-       /* dbg(DBG_INIT,"MKDIR after lookup %d,%f\n",retval,res_node->vn_vno); */
+
         if(retval==-ENOTDIR)
                 return -ENOTDIR;
 
         retval=lookup(res_node, name, namelen, &res_node);
         if(retval>=0)
         {
-            dbg(DBG_INIT,"return value from look > 0\n");        
             vput(res_node);
+            dbg(DBG_PRINT,"(GRADING2C) Directory already exists\n");
             return -EEXIST;
         }
         if(retval==-ENAMETOOLONG)
@@ -337,14 +327,10 @@ do_mkdir(const char *path)
             vput(res_node);
             return -ENOTDIR;
         }
-
-	dbg(DBG_INIT,"return value from look <= 0\n");   
-	dbg(DBG_INIT,"CREATING MKNODDDDDDDDDDDDDDDDDDDDDD %d,%s,%d\n",res_node->vn_vno,name,namelen);
 	
 	KASSERT(NULL != res_node->vn_ops->mkdir);   
-	dbg(DBG_INIT,"The vnode has an implementation of mkdir\n");
+	dbg(DBG_PRINT,"(GRADING2A 3.c) The vnode has an implementation of mkdir\n");
         int status= res_node->vn_ops->mkdir(res_node, name, namelen);
-        dbg(DBG_INIT,"end of mkdir %d\n",status); 
         return status;
 }
 
@@ -368,8 +354,7 @@ do_mkdir(const char *path)
  */
 int do_rmdir(const char *path)
 {
-/*   NOT_YET_IMPLEMENTED("VFS: do_rmdir");*/
-   dbg(DBG_INIT,"RMDIRSTART %s,%d\n",path,(int)strlen(path));
+   /* NOT_YET_IMPLEMENTED("VFS: do_rmdir"); */
    int len1=0,len2=0,len3=0;
    size_t path_len;
    const char *path_name;
@@ -390,27 +375,27 @@ int do_rmdir(const char *path)
    {
    return -ENOTDIR;
    }
-   dbg(DBG_INIT,"RET_VAL FROM DO_RMDIR CCCCCCCCCCCCCCCCCCCCCCCCCC %d\n",ret_val);
-   
-  
    
    len1=strlen(path_name);
    len2=len1-1;
    len3=len1-2;
-   dbg(DBG_INIT,"printpath x%cx%cx\n",path_name[len3],path_name[len2]);
+  
+  /* Checking for . and .. */
    if(path_name[len2]=='.')
    {
 	if(path_name[len3]=='.')
 	{
+	   dbg(DBG_PRINT,"(GRADING2C) Handling .. case\n");
 	   return -ENOTEMPTY;
 	}
 	else
 	{
+       	   dbg(DBG_PRINT,"(GRADING2C) Handling . case\n");
 	   return -EINVAL;
 	}
    }
    KASSERT(NULL != path_vnode->vn_ops->rmdir);
-   dbg(DBG_INIT,"(GRADING2 3.d)  Directory's vnode is not null\n");
+   dbg(DBG_PRINT,"(GRADING2A 3.d)  Directory's vnode is not null\n");
    
    ret_code=path_vnode->vn_ops->rmdir(path_vnode,path_name,path_len);
 
@@ -433,37 +418,31 @@ int do_rmdir(const char *path)
 int
 do_unlink(const char *path)
 {
-        /*OT_YET_IMPLEMENTED("VFS: do_unlink");*/
-        dbg(DBG_INIT,"DO_UNLINK %s\n",path);
+        /*NOT_YET_IMPLEMENTED("VFS: do_unlink");*/
         const char *name;
         size_t namelen = 0;
         vnode_t *res_node,*root_dir;
         if(strlen(path)>MAXPATHLEN)
                 return -ENAMETOOLONG;
         int retval=dir_namev(path, &namelen, &name,NULL, &root_dir);
-        dbg(DBG_INIT,"DO_UNLINK: Name to be unlinked %s\n", name);
+        dbg(DBG_PRINT,"(GRADING2C) DO_UNLINK: Name to be unlinked %s\n", name);
         if(retval < 0){
             return retval;
         }
 
         retval=lookup(root_dir, name,namelen, &res_node);
-        dbg(DBG_INIT,"unlinkafterlookup %d\n", retval);
+     
         if(retval < 0){
             return retval;
         }
-        /*
-        if(retval==-ENOTDIR)
-                return -ENOTDIR;
-        if(retval==-ENOENT)
-                return -ENOENT;
-        */
 
         if(S_ISDIR(res_node->vn_mode))
         {
                 vput(res_node);
                 return -EISDIR;
         }
-        dbg(DBG_INIT,"unlinkend\n");
+        KASSERT(NULL != root_dir->vn_ops->unlink);
+        dbg(DBG_PRINT,"(GRADING2A 3.e) Vnode has an implementation of unlink\n");
         return root_dir->vn_ops->unlink(root_dir, name, namelen);
 }
 
@@ -519,9 +498,12 @@ do_link(const char *from, const char *to)
 
         retval=lookup(res_node_dest, name,namelen, &result);
         if(retval>0)
-               { vput(result);
-                 return -EEXIST;
-                }
+               { 
+               vput(result);
+               return -EEXIST;
+               }
+        KASSERT(NULL != res_node_dest->vn_ops->link);
+        dbg(DBG_PRINT,"(GRADING2C) Vnode has an implementation of link\n");
         retval=res_node_dest->vn_ops->link(res_node_dest,res_node_source, name,namelen);
 
         vput(res_node_dest);
@@ -576,6 +558,7 @@ do_chdir(const char *path)
         if(!S_ISDIR(res_node->vn_mode))
         {        
                 vput(res_node);
+                dbg(DBG_PRINT,"(GRADING2C) Not a directory\n");
                 return -ENOTDIR;
         }
         vput(curproc->p_cwd);
@@ -602,7 +585,6 @@ int
 do_getdent(int fd, struct dirent *dirp)
 {
    /*NOT_YET_IMPLEMENTED("VFS: do_getdent DONE");*/
-   dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX getdent 1\n");
    int to_add;
    if(fd < 0 || fd >= NFILES)
    {  
@@ -613,11 +595,13 @@ do_getdent(int fd, struct dirent *dirp)
    file_fd=fget(fd);
    if(file_fd ==NULL)
    {
+      dbg(DBG_PRINT,"(GRADING2C) null file descriptor\n");
       return -EBADF;
    }
    if(!S_ISDIR(file_fd->f_vnode->vn_mode))
    {
       fput(file_fd);
+      dbg(DBG_PRINT,"(GRADING2C) Not a directory\n");
       return -ENOTDIR;
    }
    if(!file_fd->f_vnode->vn_ops->readdir){
@@ -625,14 +609,13 @@ do_getdent(int fd, struct dirent *dirp)
       return 0;
    }
    to_add = file_fd->f_vnode->vn_ops->readdir(file_fd->f_vnode,file_fd->f_pos,dirp);
-   dbg(DBG_INIT,"TO_ADD = %d\n", to_add);
+   
    if(to_add==0){
        return 0;
    }
    if(to_add>0)
       file_fd->f_pos = file_fd->f_pos + to_add;
     fput(file_fd);
-   dbg(DBG_INIT,"Size = %d\n", sizeof(*dirp));
   
     return sizeof(*dirp);
 }
@@ -661,7 +644,7 @@ do_lseek(int fd, int offset, int whence)
         fle=fget(fd);
         if(fle==NULL)
         {
-            dbg(DBG_PRINT,"no files available");
+            dbg(DBG_PRINT,"(GRADING2C) file unavailable\n");
             return -EBADF;
         }
 
@@ -678,7 +661,6 @@ do_lseek(int fd, int offset, int whence)
         }
         else if(whence == SEEK_END)
         {
-            /*TODO Check or not*/
             fpos=fle->f_vnode->vn_len+offset;
         }
         else{
@@ -691,7 +673,6 @@ do_lseek(int fd, int offset, int whence)
             return -EINVAL;
         }
         fle->f_pos = fpos;
-        dbg(DBG_INIT,"\n\nLSEEKVALUE %d\n",fle->f_pos);
         fput(fle);
         return fpos; 
 }
@@ -710,30 +691,21 @@ do_lseek(int fd, int offset, int whence)
 int do_stat(const char *path, struct stat *buf)
 {
   /*NOT_YET_IMPLEMENTED("VFS: do_stat DONE");*/
-  dbg(DBG_INIT,"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DOSTAT 1\n");
   int ret_val,ret_code;
   vnode_t *get_vnode;
    if(strlen(path)<1)
    {
+      dbg(DBG_PRINT,"(GRADING2C) Invalid path\n");
       return -EINVAL;
    }
   ret_val=open_namev(path, O_RDONLY, &get_vnode, NULL);
-
-  KASSERT(get_vnode->vn_ops->stat);
-  dbg(DBG_INIT,"(GRADING2 3.f) vnode exists\n");
   
   if(ret_val < 0){
       return ret_val;
   }
-  /*
-  if(ret_val == -ENOENT)
-     return ret_code;
-  if(ret_val == -ENOTDIR)
-     return ret_code;
-  if(ret_val == -ENAMETOOLONG)
-     return ret_code;
-  */
-   
+  
+  KASSERT(get_vnode->vn_ops->stat);
+  dbg(DBG_PRINT,"(GRADING2A 3.f) vnode has an implementation of stat\n");
   ret_code=get_vnode->vn_ops->stat(get_vnode,buf); 
   return ret_code;
 }

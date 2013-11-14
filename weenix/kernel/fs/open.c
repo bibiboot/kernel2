@@ -72,7 +72,6 @@ get_empty_fd(proc_t *p)
 int
 do_open(const char *filename, int oflags)
 {
-        dbg(DBG_INIT,"YYYYYYYYYYYYYYYYYYYYYYYY called do_open\n");
         /*NOT_YET_IMPLEMENTED("VFS: do_open");*/
         if(strlen(filename) > NAME_LEN){
             return -ENAMETOOLONG;
@@ -82,12 +81,14 @@ do_open(const char *filename, int oflags)
         if(fd == -EMFILE){
             /*No empty descriptor available*/
             /*Maximum number of files are opened*/
+            dbg(DBG_PRINT,"(GRADING2C) Maximum number of files are open\n");
             return -EMFILE;
         }
         file_t *f = fget(-1);
 
         if(f==NULL){
             /*The kalloc operation will return NULL*/
+            dbg(DBG_PRINT,"(GRADING2C) Out of memory\n");
             return -ENOMEM;
         }
         
@@ -137,7 +138,6 @@ do_open(const char *filename, int oflags)
 
         if((extra&512) != 0 ){
           /*0_TRUNC*/
-          /*TODO*/
         }
         
 	if((extra&1024) != 0){
@@ -153,10 +153,7 @@ do_open(const char *filename, int oflags)
         vnode_t *base;
 
         int status = open_namev(filename, oflags, &res_vnode, NULL);
-	 dbg(DBG_INIT,"OPEN-after open_namev %d \n",status);
 
-       
-	dbg(DBG_INIT,"OPEN-after after open_namev \n");
         if(status == -ENOENT && oflags != O_CREAT){
             curproc->p_files[fd]=NULL;
             fput(f);
@@ -168,27 +165,22 @@ do_open(const char *filename, int oflags)
             return status;
         }
 	
-	dbg(DBG_INIT,"OPEN(2)-after after open_namev \n");
-	
 	 /*If ISDIR and oflag permissions are */
          if(_S_TYPE(res_vnode->vn_mode)==S_IFDIR && 
               ( perm != O_RDONLY) ){
-              dbg(DBG_INIT,"OPEN-afte open_namev inside permission-1\n");
            curproc->p_files[fd]=NULL;
-           dbg(DBG_INIT,"PEN-afte open_namev inside permission-2\n");
            fput(f);
            return -EISDIR; 
         }
-        dbg(DBG_INIT,"\n\n\n\n\nopeninsideappend %d,%d\n",oflags,extra);
         if((extra&1024) != 0 && perm!=2){
             /*O_APPEND*/
            /*Take default seek*/ 
+           dbg(DBG_PRINT,"(GRADING2C) Case where O_APPEND (or) RDWR \n");
            seek = res_vnode->vn_len;
         }
 
         /*Set file descriptor of current process*/
         /*fd of the current process will not be null anymore*/
-       
 
         /*Fill in the file_t*/
         f->f_pos = seek;

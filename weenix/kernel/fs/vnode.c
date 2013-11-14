@@ -434,20 +434,21 @@ init_special_vnode(vnode_t *vn)
 static int
 special_file_read(vnode_t *file, off_t offset, void *buf, size_t count)
 {
-        NOT_YET_IMPLEMENTED("VFS: special_file_read");
+        /*NOT_YET_IMPLEMENTED("VFS: special_file_read");*/
         KASSERT(file);
-        dbg(DBG_INIT,"(GRADING2 1.a)  File is not null\n");
+        dbg(DBG_PRINT,"(GRADING2A 1.a)  File is not null\n");
 
         KASSERT((S_ISCHR(file->vn_mode) || S_ISBLK(file->vn_mode)));
-        dbg(DBG_INIT,"(GRADING2 1.a)  Filemodde\n");
+        dbg(DBG_PRINT,"(GRADING2A 1.a) Character or Block File\n");
 
-        if (S_ISCHR(file->vn_mode)){
-            KASSERT(file->vn_cdev && file->vn_cdev->cd_ops && file->vn_cdev->cd_ops->read);
-            dbg(DBG_INIT,"(GRADING2 1.a)  Byte_pointers are not null and the function pointers do exist\n");
-        }
         if (S_ISBLK(file->vn_mode)){
             /* In case the file is block file */
             return -ENOTSUP;
+        }
+        
+        if (S_ISCHR(file->vn_mode)){
+            KASSERT(file->vn_cdev && file->vn_cdev->cd_ops && file->vn_cdev->cd_ops->read);
+        dbg(DBG_PRINT,"(GRADING2A 1.a)  Byte_pointers are not null and the function pointers do exist\n");
         }
         return file->vn_cdev->cd_ops->read( file->vn_cdev, offset, buf, count);
 }
@@ -461,21 +462,23 @@ special_file_read(vnode_t *file, off_t offset, void *buf, size_t count)
 static int
 special_file_write(vnode_t *file, off_t offset, const void *buf, size_t count)
 {
-        NOT_YET_IMPLEMENTED("VFS: special_file_write");
+        /*NOT_YET_IMPLEMENTED("VFS: special_file_write");*/
         KASSERT(file);
-        dbg(DBG_INIT,"(GRADING2 1.a)  File is not null\n");
+        dbg(DBG_PRINT,"(GRADING2A 1.b)  File is not null\n");
 
         KASSERT((S_ISCHR(file->vn_mode) || S_ISBLK(file->vn_mode)));
-        dbg(DBG_INIT,"(GRADING2 1.a)  Filemodde\n");
+        dbg(DBG_PRINT,"(GRADING2A 1.b)  Character or Block File\n");
 
-        if (S_ISCHR(file->vn_mode)){
-            KASSERT(file->vn_cdev && file->vn_cdev->cd_ops && file->vn_cdev->cd_ops->write);
-            dbg(DBG_INIT,"(GRADING2 1.a)  Byte_pointers are not null and the function pointers do exist\n");
-        }
         if (S_ISBLK(file->vn_mode)){
             /* In case the file is block file */
             return -ENOTSUP;
         }
+        
+        if (S_ISCHR(file->vn_mode)){
+            KASSERT(file->vn_cdev && file->vn_cdev->cd_ops && file->vn_cdev->cd_ops->write);
+        dbg(DBG_PRINT,"(GRADING2A 1.b)  Byte_pointers are not null and the function pointers do exist\n");
+        }
+        
         return file->vn_cdev->cd_ops->write( file->vn_cdev, offset, buf, count);
 }
 
